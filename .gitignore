@@ -1,0 +1,11 @@
+# Design prototypes (not for production)
+Lumenical/
+
+# Apps Script source (lives in Google Sheets, not deployed from here)
+apps-script.js
+
+# Claude Code config
+.claude/
+
+# OS files
+.DS_Store

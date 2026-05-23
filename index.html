@@ -1,0 +1,388 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Lumenical — Coming Soon</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+
+<style>
+  :root {
+    --ink-950:#0A1421; --ink-900:#0E1A2B; --ink-800:#142436; --ink-700:#1F3047;
+    --ink-600:#324562; --ink-500:#4A5C75; --ink-400:#6B7C94; --ink-300:#94A1B5;
+    --ink-200:#BFC8D5; --ink-100:#DFE4EC;
+    --paper-50:#FAF7F2; --paper-100:#F4EFE6; --paper-200:#ECE6D9; --paper-300:#DDD3BF;
+    --signal-500:#3A78BC; --signal-100:#DCE7F3;
+    --lumen-500:#C9A658; --lumen-100:#F1E5C8;
+    --success-500:#2E8056;
+
+    --font-sans: "Geist", -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-serif: "Instrument Serif", Georgia, serif;
+    --font-mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; height: 100%; }
+  body {
+    font-family: var(--font-sans);
+    background: var(--paper-50);
+    color: var(--ink-900);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    overflow-x: hidden;
+  }
+
+  /* ----------- WORDMARK ----------- */
+  .mark {
+    font-family: var(--font-sans);
+    font-weight: 500;
+    line-height: 1;
+    letter-spacing: -0.04em;
+    display: inline-flex;
+    align-items: baseline;
+    color: inherit;
+  }
+  .mark .ical { color: var(--ink-400); font-weight: 400; }
+  .mark .pip {
+    width: 0.13em; height: 0.13em;
+    background: var(--lumen-500);
+    border-radius: 999px;
+    display: inline-block;
+    transform: translateY(-0.05em);
+    margin-left: 0.045em;
+    position: relative;
+  }
+  .mark .pip::after {
+    content: "";
+    position: absolute;
+    inset: -25%;
+    border-radius: 999px;
+    background: var(--lumen-500);
+    opacity: 0.3;
+    animation: pulse 3.6s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { transform: scale(0.85); opacity: 0; }
+    25% { opacity: 0.35; }
+    50% { transform: scale(2.6); opacity: 0; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .mark .pip::after { animation: none; }
+  }
+
+  /* ----------- LAYOUT ----------- */
+  .page {
+    min-height: 100vh;
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    padding: 32px 48px;
+    position: relative;
+  }
+
+  /* TOP BAR */
+  .top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-400);
+  }
+  .top .right { display: inline-flex; gap: 18px; align-items: center; }
+  .top .right .live-dot {
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .top .right .live-dot::before {
+    content: "";
+    width: 6px; height: 6px;
+    border-radius: 999px;
+    background: var(--lumen-500);
+    display: inline-block;
+  }
+
+  /* CENTER STAGE */
+  .stage {
+    display: grid;
+    align-items: center;
+    justify-items: center;
+    padding: 80px 0;
+  }
+  .stage-inner {
+    text-align: center;
+    max-width: 720px;
+    display: grid;
+    justify-items: center;
+    gap: 40px;
+  }
+  .wordmark-xl {
+    font-size: clamp(72px, 14vw, 192px);
+  }
+  .statement {
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-weight: 400;
+    font-size: clamp(28px, 3.6vw, 44px);
+    line-height: 1.15;
+    letter-spacing: -0.018em;
+    color: var(--ink-700);
+    max-width: 18ch;
+    margin: 0;
+  }
+  .subhead {
+    font-size: 17px;
+    line-height: 1.5;
+    color: var(--ink-600);
+    max-width: 48ch;
+    margin: 0;
+  }
+
+  /* EMAIL FORM */
+  .signup {
+    width: min(440px, 100%);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    align-items: center;
+  }
+  .signup .form {
+    width: 100%;
+    display: flex;
+    gap: 8px;
+    padding: 6px;
+    border-radius: 8px;
+    background: #fff;
+    border: 1px solid var(--paper-300);
+    transition: border-color 160ms, background 160ms, box-shadow 160ms;
+  }
+  .signup .form:focus-within {
+    border-color: var(--signal-500);
+    box-shadow: 0 0 0 3px var(--signal-100);
+  }
+  .signup input {
+    flex: 1;
+    border: 0;
+    background: transparent;
+    font-family: var(--font-sans);
+    font-size: 15px;
+    padding: 10px 12px;
+    color: inherit;
+    outline: none;
+  }
+  .signup input::placeholder { color: var(--ink-400); }
+  .signup button {
+    border: 0;
+    background: var(--ink-900);
+    color: var(--paper-50);
+    font-family: var(--font-sans);
+    font-weight: 500;
+    font-size: 14px;
+    padding: 11px 18px;
+    border-radius: 6px;
+    cursor: pointer;
+    letter-spacing: -0.005em;
+    transition: background 120ms ease;
+    white-space: nowrap;
+  }
+  .signup button:hover:not(:disabled) { background: var(--ink-700); }
+  .signup button:disabled { cursor: default; }
+  .signup .hint {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--ink-400);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    text-align: center;
+  }
+  .signup.success .form {
+    border-color: var(--success-500);
+    background: rgba(46, 128, 86, 0.06);
+  }
+  .signup .success-msg {
+    font-size: 14px;
+    color: var(--ink-800);
+    line-height: 1.5;
+    text-align: center;
+    max-width: 36ch;
+  }
+  .signup .success-msg em {
+    font-family: var(--font-serif);
+    color: var(--ink-700);
+  }
+
+  /* BOTTOM META */
+  .bottom {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--ink-400);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+  .bottom .col {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    line-height: 1.7;
+  }
+
+  /* DOT FIELD */
+  .dotfield {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background-image: radial-gradient(var(--paper-300) 0.6px, transparent 0.6px);
+    background-size: 28px 28px;
+    background-position: 0 0;
+    opacity: 0.4;
+    mask-image: radial-gradient(ellipse at center, rgba(0,0,0,0.6), transparent 70%);
+    -webkit-mask-image: radial-gradient(ellipse at center, rgba(0,0,0,0.6), transparent 70%);
+  }
+
+  /* HIDDEN STATES */
+  .hidden { display: none; }
+
+  @media (max-width: 640px) {
+    .page { padding: 20px 24px; }
+    .top { font-size: 10px; gap: 12px; }
+    .top .right { gap: 12px; }
+    .stage { padding: 48px 0; }
+    .stage-inner { gap: 28px; }
+    .signup .form { flex-direction: column; padding: 8px; gap: 4px; }
+    .signup button { width: 100%; }
+    .bottom { font-size: 10px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="page">
+  <div class="dotfield" aria-hidden="true"></div>
+
+  <header class="top">
+    <span>Lumenical</span>
+    <span class="right">
+      <span class="live-dot">Coming Soon</span>
+    </span>
+  </header>
+
+  <main class="stage">
+    <div class="stage-inner">
+      <div class="mark wordmark-xl">
+        <span>lumen</span><span class="ical">ical</span><span class="pip"></span>
+      </div>
+
+      <h1 class="statement">Quietly putting it together.</h1>
+
+      <p class="subhead">IT professional services for businesses of 5 to 100. Coming Soon.</p>
+
+      <div class="signup" id="signup">
+        <form class="form" id="signup-form">
+          <input
+            type="email"
+            id="email-input"
+            placeholder="you@yourcompany.com"
+            aria-label="Email address"
+            autocomplete="email"
+            required
+          />
+          <button type="submit" id="submit-btn">Notify me</button>
+        </form>
+        <div class="hint" id="hint">
+          We'll write once, when we open the door. No newsletter.
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="bottom">
+    <div class="col">
+      <span>admin@lumenical.com</span>
+      <span>Dubai International Financial Centre, Dubai, UAE</span>
+    </div>
+    <div class="col" style="text-align: right">
+      <span>Coming Soon</span>
+      <span>&copy; 2026 Lumenical</span>
+    </div>
+  </footer>
+</div>
+
+<script>
+  (function () {
+    // ── CONFIG ──────────────────────────────────────────────────────
+    // Replace with your deployed Google Apps Script web app URL
+    var SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyUd6mPWB500kVS52v97KT5Fk7QSx9G20DXKA6xjH8v3Z_aW5uCnOYUeUHcrecbeZZJ/exec";
+    // ────────────────────────────────────────────────────────────────
+
+    var form = document.getElementById("signup-form");
+    var input = document.getElementById("email-input");
+    var btn = document.getElementById("submit-btn");
+    var hint = document.getElementById("hint");
+    var signup = document.getElementById("signup");
+
+    form.addEventListener("submit", function (e) {
+      e.preventDefault();
+
+      var email = input.value.trim();
+      var valid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+
+      if (!valid) {
+        hint.textContent = "That doesn’t look like an email — try again?";
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = "Adding…";
+      hint.textContent = "";
+
+      if (SCRIPT_URL === "YOUR_APPS_SCRIPT_URL") {
+        // No backend configured — simulate success for testing
+        setTimeout(function () { showSuccess(email); }, 700);
+        return;
+      }
+
+      fetch(SCRIPT_URL, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain" },
+        body: JSON.stringify({ email: email }),
+      })
+        .then(function (res) { return res.json(); })
+        .then(function (data) {
+          if (data.result === "success") {
+            showSuccess(email);
+          } else {
+            showError("Something went wrong — please try again.");
+          }
+        })
+        .catch(function () {
+          showError("Could not connect — please try again.");
+        });
+    });
+
+    function showSuccess(email) {
+      signup.classList.add("success");
+      input.value = email;
+      input.readOnly = true;
+      btn.textContent = "On the list ✓";
+      btn.disabled = true;
+      hint.innerHTML =
+        'Thank you. <em style="font-family:var(--font-serif);color:var(--ink-700)">We’ll be in touch when we open the door.</em>';
+    }
+
+    function showError(msg) {
+      btn.disabled = false;
+      btn.textContent = "Notify me";
+      hint.textContent = msg;
+    }
+  })();
+</script>
+
+</body>
+</html>
