@@ -1,0 +1,20 @@
+rules_version = '2';
+
+// All uploads go through the Python backend using the Admin SDK. Client-side
+// writes are never allowed. Public reads are scoped to the `public/` prefix
+// (posters, site imagery); anything outside it requires an authenticated
+// admin/editor, matching the Firestore rules for the `media` collection.
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /public/{allPaths=**} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    match /{allPaths=**} {
+      allow read: if request.auth != null
+        && request.auth.token.role in ['admin', 'editor'];
+      allow write: if false;
+    }
+  }
+}

@@ -1,0 +1,87 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-paper-50 text-ink-900 antialiased;
+    text-rendering: optimizeLegibility;
+  }
+}
+
+@layer components {
+  /* ----------- WORDMARK ----------- */
+  .mark {
+    @apply inline-flex items-baseline font-sans font-medium leading-none;
+    letter-spacing: -0.04em;
+  }
+  .mark .ical {
+    @apply text-ink-400 font-normal;
+  }
+  .mark .pip {
+    width: 0.13em;
+    height: 0.13em;
+    @apply bg-lumen-500 inline-block relative;
+    border-radius: 999px;
+    transform: translateY(-0.05em);
+    margin-left: 0.045em;
+  }
+  .mark .pip::after {
+    content: "";
+    position: absolute;
+    inset: -25%;
+    border-radius: 999px;
+    @apply bg-lumen-500;
+    opacity: 0.3;
+    animation: lumen-pulse 3.6s ease-in-out infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .mark .pip::after {
+      animation: none;
+    }
+  }
+
+  /* ----------- DOT FIELD ----------- */
+  .dotfield {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background-image: radial-gradient(
+      theme("colors.paper.300") 0.6px,
+      transparent 0.6px
+    );
+    background-size: 28px 28px;
+    background-position: 0 0;
+    opacity: 0.4;
+    mask-image: radial-gradient(
+      ellipse at center,
+      rgba(0, 0, 0, 0.6),
+      transparent 70%
+    );
+    -webkit-mask-image: radial-gradient(
+      ellipse at center,
+      rgba(0, 0, 0, 0.6),
+      transparent 70%
+    );
+  }
+}
+
+@keyframes lumen-pulse {
+  0%,
+  100% {
+    transform: scale(0.85);
+    opacity: 0;
+  }
+  25% {
+    opacity: 0.35;
+  }
+  50% {
+    transform: scale(2.6);
+    opacity: 0;
+  }
+}

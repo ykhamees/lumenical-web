@@ -1,0 +1,88 @@
+rules_version = '2';
+
+// All writes go through the Python backend (Cloud Run) using the Admin SDK,
+// which authenticates as a service account and bypasses these rules entirely.
+// These rules exist only to describe what an unauthenticated browser or a
+// signed-in admin/editor may READ directly from the client. No collection is
+// ever client-writable — see the architecture plan for why this is load-bearing.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function hasRole(role) {
+      return isSignedIn() && request.auth.token.role == role;
+    }
+
+    function isEditorOrAdmin() {
+      return isSignedIn() && request.auth.token.role in ['admin', 'editor'];
+    }
+
+    function isPublished() {
+      return resource.data.status == 'published';
+    }
+
+    // Public content: readable by anyone once published, never client-writable.
+    match /demos/{demoId} {
+      allow read: if isPublished() || isEditorOrAdmin();
+      allow write: if false;
+    }
+
+    match /pages/{slug} {
+      allow read: if isPublished() || isEditorOrAdmin();
+      allow write: if false;
+    }
+
+    match /media/{assetId} {
+      allow read: if isEditorOrAdmin();
+      allow write: if false;
+    }
+
+    // Sensitive collections: no public access at all, admin/editor read-only.
+    match /leads/{leadId} {
+      allow read: if isEditorOrAdmin();
+      allow write: if false;
+    }
+
+    match /newsletterSubscribers/{docId} {
+      allow read: if isEditorOrAdmin();
+      allow write: if false;
+    }
+
+    match /chatSessions/{sessionId} {
+      allow read: if hasRole('admin');
+      allow write: if false;
+
+      match /messages/{messageId} {
+        allow read: if hasRole('admin');
+        allow write: if false;
+      }
+    }
+
+    match /adminUsers/{uid} {
+      allow read: if hasRole('admin') || request.auth.uid == uid;
+      allow write: if false;
+    }
+
+    match /auditLog/{entryId} {
+      allow read: if hasRole('admin');
+      allow write: if false;
+    }
+
+    match /outboundEmails/{emailId} {
+      allow read: if hasRole('admin');
+      allow write: if false;
+    }
+
+    match /abuseCounters/{bucketKey} {
+      allow read, write: if false;
+    }
+
+    // Default deny for anything not explicitly listed above.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

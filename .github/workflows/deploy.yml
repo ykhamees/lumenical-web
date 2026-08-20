@@ -1,0 +1,45 @@
+name: Deploy to Firebase Hosting
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: firebase-hosting
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        env:
+          NEXT_PUBLIC_NEWSLETTER_SCRIPT_URL: ${{ vars.NEWSLETTER_SCRIPT_URL }}
+          NEXT_PUBLIC_CONTACT_FORM_ENDPOINT: ${{ vars.CONTACT_FORM_ENDPOINT }}
+        run: npm run build
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: projects/577809123018/locations/global/workloadIdentityPools/github-actions/providers/github
+          service_account: github-deployer@lumenical-ai.iam.gserviceaccount.com
+
+      - name: Deploy to Firebase Hosting
+        run: npx firebase-tools deploy --only hosting --project=lumenical-ai
