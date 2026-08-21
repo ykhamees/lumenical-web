@@ -144,3 +144,20 @@ def admin_token() -> str:
 def no_role_token() -> str:
     email = f"norole-{uuid.uuid4().hex[:8]}@example.com"
     return create_user_and_get_token(email)
+
+
+@pytest.fixture
+def editor_token() -> str:
+    from firebase_admin import auth as firebase_auth
+
+    from app.firebase_app import get_app
+
+    get_app()
+    email = f"editor-{uuid.uuid4().hex[:8]}@example.com"
+    password = "test-password-123"
+    create_user_and_get_token(email, password)
+
+    uid = firebase_auth.get_user_by_email(email).uid
+    firebase_auth.set_custom_user_claims(uid, {"role": "editor"})
+
+    return sign_in_and_get_token(email, password)

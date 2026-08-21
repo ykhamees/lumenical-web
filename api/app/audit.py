@@ -15,11 +15,12 @@ def record_status_change(
     new_status: str,
     actor: AdminUser,
     action: str,
+    extra_fields: dict[str, object] | None = None,
 ) -> str:
-    """Atomically updates {collection}/{doc_id}.status and writes a matching
-    auditLog entry — either both happen or neither does. Returns the status
-    the document had before this change. Raises DocumentNotFoundError if
-    the document doesn't exist.
+    """Atomically updates {collection}/{doc_id}.status (plus any extra_fields,
+    e.g. publishedAt) and writes a matching auditLog entry — either all of it
+    happens or none of it does. Returns the status the document had before
+    this change. Raises DocumentNotFoundError if the document doesn't exist.
     """
     doc_ref = db.collection(collection).document(doc_id)
     audit_ref = db.collection("auditLog").document()
@@ -31,7 +32,8 @@ def record_status_change(
             raise DocumentNotFoundError(doc_id)
 
         before_status = str(snapshot.get("status"))
-        transaction.update(doc_ref, {"status": new_status})
+        updates: dict[str, object] = {"status": new_status, **(extra_fields or {})}
+        transaction.update(doc_ref, updates)
         transaction.set(
             audit_ref,
             {
