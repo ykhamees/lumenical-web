@@ -15,6 +15,16 @@ const NAV_LINKS = [
   { href: "/admin/media/", label: "Media" },
 ];
 
+// The API gates these two admin-only (require_admin_only, not
+// require_admin_user) — matching firestore.rules' hasRole('admin') on
+// auditLog/outboundEmails, unlike every other collection here which
+// allows editors too. Hiding the links for editors is UX only; the API
+// is what actually enforces it.
+const ADMIN_ONLY_NAV_LINKS = [
+  { href: "/admin/audit/", label: "Audit" },
+  { href: "/admin/emails/", label: "Emails" },
+];
+
 export function AdminShell({ children }: { children: ReactNode }) {
   const { status, user, role, signOut } = useAdminAuth();
   const pathname = usePathname();
@@ -68,7 +78,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
             Lumenical — Admin
           </span>
           <nav className="flex items-center gap-4">
-            {NAV_LINKS.map((link) => {
+            {[...NAV_LINKS, ...(role === "admin" ? ADMIN_ONLY_NAV_LINKS : [])].map((link) => {
               const active = pathname === link.href;
               return (
                 <Link

@@ -69,6 +69,32 @@ export default function AdminPage() {
             Upload and manage images and files used across the site.
           </p>
         </Link>
+        {role === "admin" && (
+          <>
+            <Link
+              href="/admin/audit/"
+              className="rounded-lg border border-border bg-surface p-5 hover:bg-surface-2"
+            >
+              <span className="font-mono text-[11px] uppercase tracking-[0.1em] text-text-label">
+                Audit
+              </span>
+              <p className="mt-2 text-sm text-text-2">
+                Review every status change and deletion across the console.
+              </p>
+            </Link>
+            <Link
+              href="/admin/emails/"
+              className="rounded-lg border border-border bg-surface p-5 hover:bg-surface-2"
+            >
+              <span className="font-mono text-[11px] uppercase tracking-[0.1em] text-text-label">
+                Emails
+              </span>
+              <p className="mt-2 text-sm text-text-2">
+                See every outbound email attempt and whether it sent.
+              </p>
+            </Link>
+          </>
+        )}
       </div>
     </div>
   );
