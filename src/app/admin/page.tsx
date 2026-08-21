@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useAdminAuth } from "@/lib/admin-auth";
 
 export default function AdminPage() {
@@ -11,6 +12,31 @@ export default function AdminPage() {
       <p className="mt-2 text-sm text-text-2">
         Signed in as {user?.email} ({role}).
       </p>
+
+      <div className="mt-8 grid gap-4 sm:grid-cols-2">
+        <Link
+          href="/admin/leads/"
+          className="rounded-lg border border-border bg-surface p-5 hover:bg-surface-2"
+        >
+          <span className="font-mono text-[11px] uppercase tracking-[0.1em] text-text-label">
+            Leads
+          </span>
+          <p className="mt-2 text-sm text-text-2">
+            Review incoming leads, track status, and leave notes.
+          </p>
+        </Link>
+        <Link
+          href="/admin/newsletter/"
+          className="rounded-lg border border-border bg-surface p-5 hover:bg-surface-2"
+        >
+          <span className="font-mono text-[11px] uppercase tracking-[0.1em] text-text-label">
+            Newsletter
+          </span>
+          <p className="mt-2 text-sm text-text-2">
+            View subscribers, export the list, and manage unsubscribes.
+          </p>
+        </Link>
+      </div>
     </div>
   );
 }
