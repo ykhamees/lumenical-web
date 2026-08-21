@@ -2,10 +2,15 @@ import { auth } from "./firebase-client";
 
 export class AdminApiError extends Error {
   status: number;
+  /** The raw `detail` field from the API's error body — a string for most
+   * endpoints, but a structured object for endpoints like media delete
+   * that need to hand back more than a message (e.g. referencedBy). */
+  detail: unknown;
 
-  constructor(status: number, message: string) {
+  constructor(status: number, message: string, detail?: unknown) {
     super(message);
     this.status = status;
+    this.detail = detail;
   }
 }
 
@@ -31,7 +36,9 @@ export async function adminFetch(path: string, init?: RequestInit): Promise<Resp
 
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
-    throw new AdminApiError(res.status, body.detail ?? `Request failed (${res.status})`);
+    const message =
+      typeof body.detail === "string" ? body.detail : `Request failed (${res.status})`;
+    throw new AdminApiError(res.status, message, body.detail);
   }
 
   return res;

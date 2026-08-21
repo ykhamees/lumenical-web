@@ -58,6 +58,17 @@ export default function AdminPage() {
             Manage product and case study demos before they go live.
           </p>
         </Link>
+        <Link
+          href="/admin/media/"
+          className="rounded-lg border border-border bg-surface p-5 hover:bg-surface-2"
+        >
+          <span className="font-mono text-[11px] uppercase tracking-[0.1em] text-text-label">
+            Media
+          </span>
+          <p className="mt-2 text-sm text-text-2">
+            Upload and manage images and files used across the site.
+          </p>
+        </Link>
       </div>
     </div>
   );
