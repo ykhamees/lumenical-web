@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Instrument_Serif, JetBrains_Mono } from "next/font/google";
 import Script from "next/script";
 import { Footer } from "@/components/Footer";
+import { FooterGate } from "@/components/FooterGate";
 import { Header } from "@/components/Header";
 import { OrganizationSchema } from "@/components/OrganizationSchema";
 import { WebVitalsReporter } from "@/components/WebVitalsReporter";
@@ -103,7 +104,9 @@ export default function RootLayout({
         <main id="content" className="flex-1">
           {children}
         </main>
-        <Footer />
+        <FooterGate>
+          <Footer />
+        </FooterGate>
       </body>
     </html>
   );

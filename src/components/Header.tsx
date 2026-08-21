@@ -58,6 +58,12 @@ export function Header() {
     };
   }, [open]);
 
+  // The admin console has its own top bar (AdminShell) — the marketing nav
+  // doesn't belong there.
+  if (pathname?.startsWith("/admin")) {
+    return null;
+  }
+
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-bg/90 backdrop-blur">
       <Container className="flex items-center justify-between py-5">
