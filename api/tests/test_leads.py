@@ -7,7 +7,7 @@ from app.firestore_client import get_db
 
 def test_create_lead_writes_one_document(client: TestClient) -> None:
     db = get_db()
-    before = len(list(db.collection("leads").stream()))
+    before_ids = {doc.id for doc in db.collection("leads").stream()}
 
     resp = client.post(
         "/api/leads",
@@ -22,9 +22,13 @@ def test_create_lead_writes_one_document(client: TestClient) -> None:
     assert resp.status_code == 200
     assert resp.json() == {"ok": True}
 
+    # Firestore's stream() order is unspecified, and other test files share
+    # this same emulator collection within the session — identify the new
+    # doc by set difference, not by position.
     after = list(db.collection("leads").stream())
-    assert len(after) == before + 1
-    doc = after[-1].to_dict()
+    new_docs = [d for d in after if d.id not in before_ids]
+    assert len(new_docs) == 1
+    doc = new_docs[0].to_dict()
     assert doc is not None
     assert doc["name"] == "Ada Lovelace"
     assert doc["email"] == "ada@example.com"
