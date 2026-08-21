@@ -1,13 +1,25 @@
 import type { MetadataRoute } from "next";
+import { sitemapRoutes } from "@/content/routes";
+import { services } from "@/content/services";
+import { platforms } from "@/content/platforms";
 import { site } from "@/content/site";
 
 export const dynamic = "force-static";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const base = `https://${site.domain}`;
-  const routes = ["", "services", "about", "contact"];
 
-  return routes.map((route) => ({
-    url: route ? `${base}/${route}/` : `${base}/`,
+  const staticRoutes = sitemapRoutes.map((route) => ({
+    url: `${base}${route.path}`,
   }));
+
+  const serviceRoutes = services.map((service) => ({
+    url: `${base}/services/${service.slug}/`,
+  }));
+
+  const platformRoutes = platforms.map((platform) => ({
+    url: `${base}/platforms/${platform.slug}/`,
+  }));
+
+  return [...staticRoutes, ...serviceRoutes, ...platformRoutes];
 }
