@@ -4,6 +4,7 @@ from .routers import (
     admin,
     admin_demos,
     admin_leads,
+    admin_logs,
     admin_media,
     admin_newsletter,
     admin_pages,
@@ -23,3 +24,4 @@ app.include_router(admin_newsletter.router, prefix="/api")
 app.include_router(admin_pages.router, prefix="/api")
 app.include_router(admin_demos.router, prefix="/api")
 app.include_router(admin_media.router, prefix="/api")
+app.include_router(admin_logs.router, prefix="/api")
