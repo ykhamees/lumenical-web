@@ -36,6 +36,28 @@ export default function AdminPage() {
             View subscribers, export the list, and manage unsubscribes.
           </p>
         </Link>
+        <Link
+          href="/admin/pages/"
+          className="rounded-lg border border-border bg-surface p-5 hover:bg-surface-2"
+        >
+          <span className="font-mono text-[11px] uppercase tracking-[0.1em] text-text-label">
+            Pages
+          </span>
+          <p className="mt-2 text-sm text-text-2">
+            Write and publish insights pages with a rich text editor.
+          </p>
+        </Link>
+        <Link
+          href="/admin/demos/"
+          className="rounded-lg border border-border bg-surface p-5 hover:bg-surface-2"
+        >
+          <span className="font-mono text-[11px] uppercase tracking-[0.1em] text-text-label">
+            Demos
+          </span>
+          <p className="mt-2 text-sm text-text-2">
+            Manage product and case study demos before they go live.
+          </p>
+        </Link>
       </div>
     </div>
   );
