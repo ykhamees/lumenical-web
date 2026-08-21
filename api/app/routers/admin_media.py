@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from firebase_admin import firestore
 from google.cloud.firestore_v1.base_query import FieldFilter
 
+from ..audit import record_deletion
 from ..auth import AdminUser, require_admin_only, require_admin_user
 from ..firestore_client import get_db
 from ..media_models import (
@@ -126,5 +127,13 @@ async def delete_media(
             },
         )
 
+    record_deletion(
+        db,
+        collection="media",
+        doc_id=media_id,
+        actor=user,
+        action="media.deleted",
+        snapshot_data={"filename": data.get("filename", ""), "storagePath": data["storagePath"]},
+    )
     delete_blob(data["storagePath"])
     doc_ref.delete()

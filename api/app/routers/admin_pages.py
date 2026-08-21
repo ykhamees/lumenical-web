@@ -4,7 +4,7 @@ from typing import Any
 from fastapi import APIRouter, Depends, HTTPException, Query
 from google.cloud.firestore_v1.base_query import FieldFilter
 
-from ..audit import DocumentNotFoundError, record_status_change
+from ..audit import DocumentNotFoundError, record_deletion, record_status_change
 from ..auth import AdminUser, require_admin_only, require_admin_user
 from ..cms_models import ContentStatus, PageCreate, PageListResponse, PageOut, PageUpdate
 from ..firestore_client import get_db
@@ -135,7 +135,19 @@ async def unpublish_page(slug: str, user: AdminUser = Depends(require_admin_user
 
 @router.delete("/admin/pages/{slug}", status_code=204)
 async def delete_page(slug: str, user: AdminUser = Depends(require_admin_only)) -> None:
-    doc_ref = get_db().collection("pages").document(slug)
-    if not doc_ref.get().exists:
+    db = get_db()
+    doc_ref = db.collection("pages").document(slug)
+    snapshot = doc_ref.get()
+    if not snapshot.exists:
         raise HTTPException(status_code=404, detail="Page not found")
+
+    data = snapshot.to_dict() or {}
+    record_deletion(
+        db,
+        collection="pages",
+        doc_id=slug,
+        actor=user,
+        action="page.deleted",
+        snapshot_data={"title": data.get("title", "")},
+    )
     doc_ref.delete()

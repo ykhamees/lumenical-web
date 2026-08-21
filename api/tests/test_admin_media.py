@@ -125,6 +125,16 @@ def test_delete_unreferenced_asset(client: TestClient, admin_token: str) -> None
     resp = client.get("/api/admin/media", headers=headers)
     assert not any(item["id"] == media["id"] for item in resp.json()["items"])
 
+    from app.firestore_client import get_db
+
+    db = get_db()
+    audit_docs = list(
+        db.collection("auditLog")
+        .where(filter=FieldFilter("targetId", "==", media["id"]))
+        .stream()
+    )
+    assert any(doc.to_dict()["action"] == "media.deleted" for doc in audit_docs)
+
 
 def test_delete_referenced_asset_warns_first(client: TestClient, admin_token: str) -> None:
     headers = {"Authorization": f"Bearer {admin_token}"}

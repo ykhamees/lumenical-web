@@ -217,3 +217,11 @@ def test_delete_demo(client: TestClient, admin_token: str) -> None:
 
     resp = client.get(f"/api/admin/demos/{demo_id}", headers=headers)
     assert resp.status_code == 404
+
+    from app.firestore_client import get_db
+
+    db = get_db()
+    audit_docs = list(
+        db.collection("auditLog").where(filter=FieldFilter("targetId", "==", demo_id)).stream()
+    )
+    assert any(doc.to_dict()["action"] == "demo.deleted" for doc in audit_docs)

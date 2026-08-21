@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from firebase_admin import firestore
 from google.cloud.firestore_v1.base_query import FieldFilter
 
-from ..audit import DocumentNotFoundError, record_status_change
+from ..audit import DocumentNotFoundError, record_deletion, record_status_change
 from ..auth import AdminUser, require_admin_only, require_admin_user
 from ..cms_models import ContentStatus, DemoCreate, DemoListResponse, DemoOut, DemoUpdate
 from ..firestore_client import get_db
@@ -150,7 +150,19 @@ async def unpublish_demo(demo_id: str, user: AdminUser = Depends(require_admin_u
 
 @router.delete("/admin/demos/{demo_id}", status_code=204)
 async def delete_demo(demo_id: str, user: AdminUser = Depends(require_admin_only)) -> None:
-    doc_ref = get_db().collection("demos").document(demo_id)
-    if not doc_ref.get().exists:
+    db = get_db()
+    doc_ref = db.collection("demos").document(demo_id)
+    snapshot = doc_ref.get()
+    if not snapshot.exists:
         raise HTTPException(status_code=404, detail="Demo not found")
+
+    data = snapshot.to_dict() or {}
+    record_deletion(
+        db,
+        collection="demos",
+        doc_id=demo_id,
+        actor=user,
+        action="demo.deleted",
+        snapshot_data={"title": data.get("title", "")},
+    )
     doc_ref.delete()

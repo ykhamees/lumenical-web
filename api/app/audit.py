@@ -50,3 +50,31 @@ def record_status_change(
         return before_status
 
     return str(_run(db.transaction()))
+
+
+def record_deletion(
+    db: firestore.Client,
+    *,
+    collection: str,
+    doc_id: str,
+    actor: AdminUser,
+    action: str,
+    snapshot_data: dict[str, object] | None = None,
+) -> None:
+    """Writes an auditLog entry for a deletion. The caller still does the
+    actual delete (of the Firestore doc, and any associated storage blob)
+    — this only records that it happened, with whatever pre-deletion
+    fields are worth keeping for context.
+    """
+    db.collection("auditLog").add(
+        {
+            "action": action,
+            "targetCollection": collection,
+            "targetId": doc_id,
+            "actorUid": actor.uid,
+            "actorEmail": actor.email,
+            "before": snapshot_data or {},
+            "after": {},
+            "createdAt": firestore.SERVER_TIMESTAMP,
+        }
+    )

@@ -170,6 +170,14 @@ def test_delete_page(client: TestClient, admin_token: str) -> None:
     resp = client.get(f"/api/admin/pages/{slug}", headers=headers)
     assert resp.status_code == 404
 
+    from app.firestore_client import get_db
+
+    db = get_db()
+    audit_docs = list(
+        db.collection("auditLog").where(filter=FieldFilter("targetId", "==", slug)).stream()
+    )
+    assert any(doc.to_dict()["action"] == "page.deleted" for doc in audit_docs)
+
 
 def test_delete_404_for_unknown_slug(client: TestClient, admin_token: str) -> None:
     resp = client.delete(
