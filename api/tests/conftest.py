@@ -12,6 +12,7 @@ from fastapi.testclient import TestClient
 REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 FIRESTORE_EMULATOR_HOST = "127.0.0.1:8080"
 AUTH_EMULATOR_HOST = "127.0.0.1:9099"
+STORAGE_EMULATOR_HOST = "127.0.0.1:9199"
 TEST_PROJECT = "lumenical-ai-test"
 
 # Set at conftest import time (collection), not inside the fixture below —
@@ -23,6 +24,9 @@ TEST_PROJECT = "lumenical-ai-test"
 # verify_id_token()/get_user_by_email() silently miss them.
 os.environ["FIRESTORE_EMULATOR_HOST"] = FIRESTORE_EMULATOR_HOST
 os.environ["FIREBASE_AUTH_EMULATOR_HOST"] = AUTH_EMULATOR_HOST
+# google-cloud-storage (which firebase_admin.storage wraps) reads this
+# specific name — no "FIREBASE_" prefix, unlike the Auth emulator's var.
+os.environ["STORAGE_EMULATOR_HOST"] = f"http://{STORAGE_EMULATOR_HOST}"
 os.environ["GOOGLE_CLOUD_PROJECT"] = TEST_PROJECT
 os.environ["GCP_PROJECT_ID"] = TEST_PROJECT
 
@@ -39,7 +43,7 @@ def emulators() -> Iterator[None]:
             "firebase",
             "emulators:start",
             "--only",
-            "firestore,auth",
+            "firestore,auth,storage",
             "--project",
             TEST_PROJECT,
         ],
@@ -50,37 +54,52 @@ def emulators() -> Iterator[None]:
         text=True,
     )
 
-    _wait_for_http(f"http://{FIRESTORE_EMULATOR_HOST}/", timeout=45)
-    _wait_for_http(f"http://{AUTH_EMULATOR_HOST}/", timeout=45)
+    def _kill() -> None:
+        # `shell=True` on Windows spawns a cmd.exe wrapper around the real
+        # firebase/node/java process tree — proc.terminate() only kills that
+        # wrapper and orphans the emulator itself, still bound to the port
+        # for every subsequent test run. taskkill /T kills the whole tree.
+        if sys.platform == "win32":
+            subprocess.run(
+                ["taskkill", "/F", "/T", "/PID", str(proc.pid)],
+                capture_output=True,
+                check=False,
+            )
+        else:
+            proc.terminate()
+            try:
+                proc.wait(timeout=15)
+            except subprocess.TimeoutExpired:
+                proc.kill()
+
+    try:
+        _wait_for_http(f"http://{FIRESTORE_EMULATOR_HOST}/", timeout=45)
+        _wait_for_http(f"http://{AUTH_EMULATOR_HOST}/", timeout=45)
+        _wait_for_http(f"http://{STORAGE_EMULATOR_HOST}/", timeout=45)
+    except Exception:
+        # A startup failure here must still kill the subprocess — raising
+        # before yield means pytest never runs the code below, which would
+        # otherwise leak the emulator (and hold its ports) indefinitely.
+        _kill()
+        raise
 
     yield
 
-    # `shell=True` on Windows spawns a cmd.exe wrapper around the real
-    # firebase/node/java process tree — proc.terminate() only kills that
-    # wrapper and orphans the emulator itself, still bound to the port for
-    # every subsequent test run. taskkill /T kills the whole tree.
-    if sys.platform == "win32":
-        subprocess.run(
-            ["taskkill", "/F", "/T", "/PID", str(proc.pid)],
-            capture_output=True,
-            check=False,
-        )
-    else:
-        proc.terminate()
-        try:
-            proc.wait(timeout=15)
-        except subprocess.TimeoutExpired:
-            proc.kill()
+    _kill()
 
 
 def _wait_for_http(url: str, timeout: float) -> None:
+    """Only cares that *something* is answering HTTP on the port — not
+    that it's a 2xx. The Storage emulator's bare `GET /` always returns
+    501 (no route registered there), which isn't a "not ready" signal, so
+    checking status_code here would false-negative until the timeout.
+    """
     deadline = time.monotonic() + timeout
     last_error: Exception | None = None
     while time.monotonic() < deadline:
         try:
-            resp = httpx.get(url, timeout=1.0)
-            if resp.status_code < 500:
-                return
+            httpx.get(url, timeout=1.0)
+            return
         except httpx.HTTPError as exc:
             last_error = exc
         time.sleep(0.5)

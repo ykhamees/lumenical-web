@@ -26,16 +26,18 @@ def get_app() -> firebase_admin.App:
     """
     global _app
     if _app is None:
-        if os.environ.get("FIRESTORE_EMULATOR_HOST") or os.environ.get(
-            "FIREBASE_AUTH_EMULATOR_HOST"
+        options = {
+            "projectId": settings.gcp_project_id,
+            "storageBucket": settings.storage_bucket,
+        }
+        if (
+            os.environ.get("FIRESTORE_EMULATOR_HOST")
+            or os.environ.get("FIREBASE_AUTH_EMULATOR_HOST")
+            or os.environ.get("STORAGE_EMULATOR_HOST")
         ):
             anonymous_creds = google.auth.credentials.AnonymousCredentials()  # type: ignore[no-untyped-call]
             cred = credentials._ExternalCredentials(anonymous_creds)  # noqa: SLF001
-            _app = firebase_admin.initialize_app(
-                cred, options={"projectId": settings.gcp_project_id}
-            )
+            _app = firebase_admin.initialize_app(cred, options=options)
         else:
-            _app = firebase_admin.initialize_app(
-                options={"projectId": settings.gcp_project_id}
-            )
+            _app = firebase_admin.initialize_app(options=options)
     return _app

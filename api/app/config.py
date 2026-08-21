@@ -11,6 +11,11 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
     gcp_project_id: str = "lumenical-ai"
+    # Firebase's default bucket naming for projects created since mid-2024 —
+    # confirm this matches the real bucket once the project is provisioned
+    # (see docs/infrastructure.md); until then this only matters against
+    # the local Storage emulator, which doesn't validate the bucket name.
+    storage_bucket: str = "lumenical-ai.firebasestorage.app"
 
     # Cloudflare Turnstile (O-4). Unset => bot-check is skipped (dev/local only;
     # production must always have this set).
