@@ -1,0 +1,89 @@
+name: Deploy API to Cloud Run
+
+on:
+  push:
+    branches: [main]
+    paths: ["api/**"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: lumenical-api-deploy
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+
+      - name: Install dependencies
+        working-directory: api
+        run: uv sync
+
+      - name: Lint
+        working-directory: api
+        run: uv run ruff check .
+
+      - name: Type check
+        working-directory: api
+        run: uv run mypy app
+
+      - name: Set up Java (Firestore emulator)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Set up Node (Firebase CLI)
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+
+      - name: Run tests (against the real Firestore emulator)
+        working-directory: api
+        run: uv run pytest
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Requires the WIF binding + lumenical-api-deployer service account
+      # documented in docs/infrastructure.md — neither exists yet, so this
+      # job will fail authentication until that's provisioned. The test
+      # job above runs regardless and needs no GCP access at all.
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: projects/577809123018/locations/global/workloadIdentityPools/github-actions/providers/github
+          service_account: lumenical-api-deployer@lumenical-ai.iam.gserviceaccount.com
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker us-central1-docker.pkg.dev --quiet
+
+      - name: Build and push image
+        working-directory: api
+        run: |
+          docker build -t us-central1-docker.pkg.dev/lumenical-ai/lumenical-api/api:${{ github.sha }} .
+          docker push us-central1-docker.pkg.dev/lumenical-ai/lumenical-api/api:${{ github.sha }}
+
+      - name: Deploy to Cloud Run
+        run: |
+          gcloud run deploy lumenical-api \
+            --image=us-central1-docker.pkg.dev/lumenical-ai/lumenical-api/api:${{ github.sha }} \
+            --region=us-central1 \
+            --project=lumenical-ai \
+            --quiet

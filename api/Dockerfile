@@ -1,0 +1,16 @@
+FROM python:3.12-slim AS builder
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+WORKDIR /app
+COPY pyproject.toml uv.lock* ./
+RUN uv sync --no-dev --no-install-project
+COPY app ./app
+RUN uv sync --no-dev
+
+FROM python:3.12-slim
+WORKDIR /app
+RUN useradd --create-home --uid 1000 appuser
+COPY --from=builder /app /app
+ENV PATH="/app/.venv/bin:$PATH"
+USER appuser
+EXPOSE 8080
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080"]

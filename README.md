@@ -8,15 +8,18 @@ Marketing site for Lumenical, built with Next.js (App Router, static export) and
 src/
   app/            Route segments (App Router) — one folder per page
   components/     Shared UI (Header, Footer, forms, etc.)
-  content/        Editable site copy and data (site.ts, services.ts)
-public/           Static assets, favicon, CNAME
+  content/        Editable site copy and data (site.ts, services.ts, platforms.ts, faq.ts, routes.ts)
+public/           Static assets, favicon, brand/
+api/              Python (FastAPI) backend for the two forms — see api/README.md
 ```
 
 To edit page copy, start in `src/content/` before touching component files — most text lives there, not inline in JSX.
 
 **Content status:** copy across the site (services, about) is a first-pass draft written to match the existing brand voice. It has not been reviewed against real service offerings or pricing — review before treating any of it as final.
 
-**No Privacy Policy or Terms of Service page currently exists** — both were deliberately removed. The site still collects visitor data via the newsletter and contact forms; worth revisiting whether a privacy policy is needed before this goes live in a jurisdiction that requires one.
+**`/privacy/` and `/terms/` exist, and `hello@lumenical.com` is published.** Both legal pages were drafted from a `legal-fact-sheet` run against the finalized Phase 3 data model — see `LEGAL-FACT-SHEET.md` (gitignored, regenerate if the API's fields or integrations change). Neither page has been reviewed by a lawyer; `/terms/` in particular has no governing-law clause since no fact in this repo establishes a jurisdiction.
+
+There's a larger build still planned beyond this — an admin console and CMS. See `docs/build-plan.md` for the full scope and phase order, and `docs/infrastructure.md` for what's needed to actually deploy the API (built and tested, not yet live).
 
 ## Local development
 
@@ -37,25 +40,30 @@ npm run build
 
 Produces a fully static site in `out/` (via `output: "export"` in `next.config.mjs`) — no Node server required to host it.
 
-## Forms
+## Forms and the API
 
-Both forms degrade gracefully with no backend configured:
+Both forms `POST` same-origin JSON to the real API: `NewsletterForm.tsx` → `/api/newsletter`, `ContactForm.tsx` → `/api/leads`. `firebase.json`'s `hosting.rewrites` sends `/api/**` to the Cloud Run service described in `api/` — same-origin, so no CORS and no configurable endpoint. Both forms carry a hidden honeypot field and a Cloudflare Turnstile widget (`src/components/Turnstile.tsx`) that renders nothing until `NEXT_PUBLIC_TURNSTILE_SITE_KEY` is set.
 
-- **Newsletter** (`src/components/NewsletterForm.tsx`) simulates success locally unless `NEXT_PUBLIC_NEWSLETTER_SCRIPT_URL` is set. The original coming-soon page posted to a Google Apps Script web app that appended rows to a Google Sheet — point this env var at that same (or a new) Apps Script deployment URL to keep using that pattern.
-- **Contact** (`src/components/ContactForm.tsx`) simulates success locally unless `NEXT_PUBLIC_CONTACT_FORM_ENDPOINT` is set to an endpoint that accepts a JSON POST (`{ name, email, companySize, message }`) — an Apps Script deployment, or a service like Formspree. There's no fallback contact email published anywhere on the site, so this is currently the only way for a visitor to reach out.
+`NEXT_PUBLIC_SIMULATE_FORMS=true` is a **local-dev-only** escape hatch (see `.env.example`) that makes both forms fake success without calling the API — useful if you're not running `api/` locally too. Never set it in production; `deploy.yml` doesn't, and `preview.yml` deliberately does (so testing a PR never writes real leads into Firestore).
 
-Copy `.env.example` to `.env.local` for local testing. In production, these are set as [GitHub Actions repository variables](../../settings/variables/actions) named `NEWSLETTER_SCRIPT_URL` and `CONTACT_FORM_ENDPOINT` — see `.github/workflows/deploy.yml`.
+`hello@lumenical.com` (rendered via `src/components/ObfuscatedEmail.tsx` — hidden from the static HTML until a real click) is published on `/contact/`, `/careers/`, and the footer as an alternative contact channel.
 
-A backend replacing this Apps Script pattern entirely — real `leads`/`newsletterSubscribers` Firestore collections behind a Python API on Cloud Run — is planned; see `firestore.rules`, `firestore.indexes.json`, and `storage.rules` at the repo root for the schema already provisioned ahead of that build-out.
+**The API itself** (`api/`, FastAPI + Firestore, Cloudflare Turnstile verification, best-effort Resend email) is fully built and tested against the local Firestore emulator — see `api/README.md`. **It is not yet deployed to any live GCP infrastructure** — see `docs/infrastructure.md` for exactly what Phase 3.2 still needs to provision. Until it's deployed, form submissions in production either simulate (if `NEXT_PUBLIC_SIMULATE_FORMS` is set) or fail against a route that doesn't resolve yet.
+
+## Analytics
+
+Cookieless via [Plausible](https://plausible.io) — no consent banner needed. A no-op unless `NEXT_PUBLIC_PLAUSIBLE_DOMAIN` is set (see `.env.example`); wired in `src/app/layout.tsx`. Core Web Vitals are forwarded to Plausible as a custom event by `src/components/WebVitalsReporter.tsx`, itself a no-op if Plausible never loaded.
 
 ## Deployment
 
 Pushing to `main` triggers `.github/workflows/deploy.yml`, which builds the site and deploys `out/` to **Firebase Hosting** (project `lumenical-ai`) using [Workload Identity Federation](https://cloud.google.com/iam/docs/workload-identity-federation) — no downloaded service-account key involved. The workflow authenticates as the `github-deployer` service account, scoped to that GitHub repo only via the `github-actions` WIF pool/provider in the `lumenical-ai` GCP project.
 
-If you want the form backends wired up in the meantime, add the `NEWSLETTER_SCRIPT_URL` / `CONTACT_FORM_ENDPOINT` repository variables under **Settings → Secrets and variables → Actions → Variables**.
+If you want Plausible or Turnstile wired up, add the `PLAUSIBLE_DOMAIN` / `TURNSTILE_SITE_KEY` repository variables under **Settings → Secrets and variables → Actions → Variables**. Both are deliberately only set in `deploy.yml`, not `preview.yml` — preview-channel traffic shouldn't pollute production analytics or require a real Turnstile challenge to test a PR.
 
-`public/CNAME` is a leftover from when this repo deployed to GitHub Pages — Firebase Hosting's custom domain is configured separately (via `firebase hosting:sites` / the Firebase console), not via that file. It's harmless to leave, but no longer does anything.
+Pull requests trigger `.github/workflows/preview.yml`, which runs the same lint/type-check/build and deploys to a temporary Firebase Hosting preview channel, commenting the preview URL on the PR.
+
+A separate `.github/workflows/deploy-api.yml`, triggered only on `api/**` changes, lints/type-checks/tests the Python API (against a real Firestore emulator it starts itself — no GCP access needed for this part) and then builds/pushes/deploys its container to Cloud Run. That deploy step needs the WIF binding documented in `docs/infrastructure.md`, which doesn't exist yet — the test job works today regardless.
 
 ## Adding a page
 
-Create a new folder under `src/app/`, e.g. `src/app/careers/page.tsx`, exporting a default component and a `metadata` object. Add it to `navLinks` or `footerLinks` in `src/content/site.ts` if it should appear in navigation, and to the route list in `src/app/sitemap.ts`.
+Create a new folder under `src/app/`, e.g. `src/app/careers/page.tsx`, exporting a default component and a `metadata` object (via `pageMetadata()` from `src/lib/seo.ts`). Add one entry to `src/content/routes.ts` — `navLinks`, `footerLinks`, and `src/app/sitemap.ts` all derive from it, so that's the only registration needed.
