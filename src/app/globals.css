@@ -3,13 +3,58 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    --bg: #faf7f2;
+    --surface: #ffffff;
+    --surface-2: #f4efe6;
+    --border: #ddd3bf;
+    --border-2: #94a1b5;
+    --text-1: #0e1a2b;
+    --text-2: #324562;
+    --text-3: #566780;
+    --text-label: #4a5c75;
+    --text-hover: #1f3047;
+    --cta-bg: #0e1a2b;
+    --cta-bg-hover: #1f3047;
+    --cta-text: #faf7f2;
+    --link: #2e649f;
+  }
+
+  .dark {
+    --bg: #07101d;
+    --surface: #0e1a2b;
+    --surface-2: #0a1421;
+    --border: #25364f;
+    --border-2: #324562;
+    --text-1: #faf7f2;
+    --text-2: #bfc8d5;
+    --text-3: #8694a9;
+    --text-label: #94a1b5;
+    --text-hover: #dfe4ec;
+    --cta-bg: #faf7f2;
+    --cta-bg-hover: #dfe4ec;
+    --cta-text: #0e1a2b;
+    --link: #6c9bd0;
+  }
+
   html {
     scroll-behavior: smooth;
+    color-scheme: light dark;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
   }
 
   body {
-    @apply bg-paper-50 text-ink-900 antialiased;
+    @apply bg-bg text-text-1 antialiased;
     text-rendering: optimizeLegibility;
+  }
+
+  .skip-link {
+    @apply fixed left-4 top-4 z-[100] -translate-y-16 rounded-md bg-cta px-4 py-2 text-sm font-medium text-on-cta transition-transform focus:translate-y-0;
   }
 }
 
@@ -52,7 +97,7 @@
     inset: 0;
     pointer-events: none;
     background-image: radial-gradient(
-      theme("colors.paper.300") 0.6px,
+      var(--border) 0.6px,
       transparent 0.6px
     );
     background-size: 28px 28px;

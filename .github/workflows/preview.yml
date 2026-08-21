@@ -1,0 +1,71 @@
+name: PR Preview
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+  id-token: write
+  pull-requests: write
+
+concurrency:
+  group: firebase-preview-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Type check
+        run: npx tsc --noEmit
+
+      - name: Build
+        env:
+          # Preview channels share the same /api/** rewrite target as
+          # production — simulate here instead, so testing a PR never
+          # writes test leads into real Firestore data.
+          NEXT_PUBLIC_SIMULATE_FORMS: "true"
+        run: npm run build
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: projects/577809123018/locations/global/workloadIdentityPools/github-actions/providers/github
+          service_account: github-deployer@lumenical-ai.iam.gserviceaccount.com
+
+      - name: Deploy preview channel
+        id: deploy
+        run: |
+          npx firebase-tools hosting:channel:deploy "pr-${{ github.event.pull_request.number }}" \
+            --project=lumenical-ai --expires 7d | tee preview-deploy.log
+          url=$(grep -oE 'https://[a-zA-Z0-9.-]+\.web\.app[^[:space:]]*' preview-deploy.log | head -n1)
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+          echo "### Preview deploy" >> "$GITHUB_STEP_SUMMARY"
+          echo "$url" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Comment preview URL on PR
+        if: steps.deploy.outputs.url != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PREVIEW_URL: ${{ steps.deploy.outputs.url }}
+        run: |
+          gh pr comment "${{ github.event.pull_request.number }}" \
+            --body "Preview deploy: $PREVIEW_URL" \
+            --repo "${{ github.repository }}" \
+            --edit-last --create-if-none
