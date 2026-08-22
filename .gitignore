@@ -10,8 +10,8 @@ apps-script.js
 # Dependencies
 node_modules/
 
-# Next.js build output
-/.next/
+# Next.js build output (unanchored — matches both the root app and admin/)
+.next/
 /out/
 
 # Env files

@@ -6,7 +6,7 @@ context: fork
 agent: lumenical-qa
 ---
 
-Run the full verification pass on the current working tree: `npm run build`, `npm run lint`, `npx tsc --noEmit`, a route-by-route HTTP spot-check against a local dev server, and the drift checks:
+Run the full verification pass on the current working tree: `npm run build`, `npm run lint`, `npx tsc --noEmit`, a route-by-route HTTP spot-check against a local dev server, and the drift checks. This covers the marketing app (repo root) only — `admin/` is a separate deployable (see `CLAUDE.md`, `admin/README.md`); before an admin deploy, run the same trio (`npm run build`, `npm run lint`, `npx tsc --noEmit`) inside `admin/` instead.
 
 - Raw hex colors outside `tailwind.config.ts` (the design-token layer) and `opengraph-image.tsx` (the sole, deliberate exception — Satori can't read Tailwind).
 - A duplicate font-loading path outside `layout.tsx`.

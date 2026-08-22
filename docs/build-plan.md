@@ -164,7 +164,8 @@ no PNG fallback, and no web manifest.
 | A-1 | **The marketing site stays a static export.** `output: "export"` + `trailingSlash: true` remain load-bearing. | It's the constraint `CLAUDE.md` calls non-negotiable, it costs nothing to host, and nothing in D-1…D-7 actually requires SSR. |
 | A-2 | **Firebase Hosting rewrites `/api/**` → Cloud Run.** | The API becomes **same-origin**. No CORS, no preflight, no `Content-Type: text/plain` workaround — the whole class of problem the `wire-form-backend` skill warns about disappears. |
 | A-3 | **CMS content is baked at build time, not fetched in the browser.** Publishing in the admin console fires a `repository_dispatch` that rebuilds and redeploys. | `demos` and `insights` pages are SEO-critical. Client-side fetching would ship them as empty shells to crawlers. Build-time Firestore reads work fine under `output: "export"`. |
-| A-4 | **The admin console is client-side routes inside the same Next export.** Flat routes (`/admin/leads/`, `/admin/pages/`, …) with client-side data fetching; detail views as drawers or `?id=` query params. | One deployable, one design system, no second build pipeline. Static export can't do un-parameterised dynamic segments, which is why routes stay flat. Authorization is enforced by the API and `firestore.rules` — the client-side check is UX only. |
+| A-4 | ~~**The admin console is client-side routes inside the same Next export.** Flat routes (`/admin/leads/`, `/admin/pages/`, …) with client-side data fetching; detail views as drawers or `?id=` query params.~~ **Superseded 2026-08-22** — see below. | ~~One deployable, one design system, no second build pipeline. Static export can't do un-parameterised dynamic segments, which is why routes stay flat. Authorization is enforced by the API and `firestore.rules` — the client-side check is UX only.~~ |
+| A-4 (2026-08-22) | **The admin console is a separate app (`admin/`), server-rendered, deployed independently to Cloud Run at `web-admin.lumenical.com`.** Flat routes (`/leads/`, `/pages/`, …, no `/admin` prefix — the whole app is admin now) with client-side data fetching, unchanged from before. It reaches the Python API through its own backend-for-frontend proxy (`admin/src/app/api/admin/[...path]/route.ts`), not a Firebase Hosting rewrite. | The owner chose to segregate deployments — admin's operational surface (auth, GCP IAM, incident blast radius) is now fully independent of the marketing site's static export. Going server-rendered isn't incidental: `admin/src/proxy.ts` verifies a session cookie before any admin page renders, replacing the old "client-side check is UX only" model with real server-side gating. `firestore.rules` and the Python API's own bearer-token check (`require_admin_user`/`require_admin_only`, unchanged) remain the authoritative authorization layer either way. Cost: two design-token files (`tailwind.config.ts`, `globals.css`) to keep in sync by hand, and one cross-app contract (`/api/admin/**`) to coordinate when it changes — accepted in exchange for deployment independence. See `docs/infrastructure-admin.md`. |
 | A-5 | **The Python API lives in this repo under `api/`.** Its own workflow, triggered on `api/**`. | `firestore.rules` and `firestore.indexes.json` already live here; splitting the schema from the only thing that writes to it invites drift. |
 | A-6 | **Dark mode is implemented**, using the DS dark ramp. | The DS ships both themes from day one (§1.1) and the site is the brand's own storefront. |
 
@@ -207,17 +208,19 @@ no PNG fallback, and no web manifest.
 404
 ```
 
-**Admin** — all `noindex`, all excluded from the sitemap
+**Admin** — a separate app (`admin/`), deployed independently at
+`web-admin.lumenical.com` (A-4, superseded 2026-08-22); every route
+`noindex` via the app's root layout, plus a blanket `robots.ts`
 
 ```
-/admin/                  Login + dashboard
-/admin/leads/            Leads pipeline
-/admin/newsletter/       Subscriber list
-/admin/pages/            Insights/pages CMS
-/admin/demos/            Demos CMS
-/admin/media/            Media library
-/admin/audit/            Audit log viewer
-/admin/emails/           Outbound email log
+/                        Login + dashboard
+/leads/                  Leads pipeline
+/newsletter/             Subscriber list
+/pages/                  Insights/pages CMS
+/demos/                  Demos CMS
+/media/                  Media library
+/audit/                  Audit log viewer
+/emails/                 Outbound email log
 ```
 
 Fourteen public route patterns (24 generated pages) and eight admin routes, against four
@@ -533,6 +536,12 @@ design language.
 
 *Accept:* an unauthenticated visitor to any `/admin/` route sees the login screen and no
 data; no admin route in `sitemap.xml`; `noindex` on all of them.
+
+**Superseded 2026-08-22** (A-4's revision, §2.1): this describes the console as
+originally shipped, inside the marketing app's export. It now lives in `admin/` as its
+own app — the route guard is real (server-verified via `admin/src/proxy.ts`) rather
+than client-side-only, `robots.ts` replaces sitemap-registry exclusion, and the DS
+tokens are a deliberate duplicate, not a reuse. See `docs/infrastructure-admin.md`.
 
 ### 4.3 Leads and newsletter
 Leads list with status pipeline, detail drawer, notes, status transitions writing to

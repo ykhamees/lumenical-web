@@ -11,6 +11,7 @@ src/
   content/        Editable site copy and data (site.ts, services.ts, platforms.ts, faq.ts, routes.ts)
 public/           Static assets, favicon, brand/
 api/              Python (FastAPI) backend for the two forms — see api/README.md
+admin/            Admin console, deployed separately — see admin/README.md
 ```
 
 To edit page copy, start in `src/content/` before touching component files — most text lives there, not inline in JSX.
@@ -19,7 +20,7 @@ To edit page copy, start in `src/content/` before touching component files — m
 
 **`/privacy/` and `/terms/` exist, and `hello@lumenical.com` is published.** Both legal pages were drafted from a `legal-fact-sheet` run against the finalized Phase 3 data model — see `LEGAL-FACT-SHEET.md` (gitignored, regenerate if the API's fields or integrations change). Neither page has been reviewed by a lawyer; `/terms/` in particular has no governing-law clause since no fact in this repo establishes a jurisdiction.
 
-There's a larger build still planned beyond this — an admin console and CMS. See `docs/build-plan.md` for the full scope and phase order, and `docs/infrastructure.md` for what's needed to actually deploy the API (built and tested, not yet live).
+This repo also holds two other independently deployed apps: the Python API (`api/`, see below) and the admin console (`admin/`, leads/newsletter/CMS/media/audit/email — see `admin/README.md`). See `docs/build-plan.md` for the full scope and phase order, and `docs/infrastructure.md` / `docs/infrastructure-admin.md` for what's needed to actually deploy each (both built and tested, neither yet live).
 
 ## Local development
 
@@ -63,6 +64,8 @@ If you want Plausible or Turnstile wired up, add the `PLAUSIBLE_DOMAIN` / `TURNS
 Pull requests trigger `.github/workflows/preview.yml`, which runs the same lint/type-check/build and deploys to a temporary Firebase Hosting preview channel, commenting the preview URL on the PR.
 
 A separate `.github/workflows/deploy-api.yml`, triggered only on `api/**` changes, lints/type-checks/tests the Python API (against a real Firestore emulator it starts itself — no GCP access needed for this part) and then builds/pushes/deploys its container to Cloud Run. That deploy step needs the WIF binding documented in `docs/infrastructure.md`, which doesn't exist yet — the test job works today regardless.
+
+Similarly, `.github/workflows/deploy-admin.yml`, triggered only on `admin/**` changes, lints/type-checks/builds the admin console and deploys it to its own Cloud Run service at `web-admin.lumenical.com`. Its deploy step needs the WIF binding in `docs/infrastructure-admin.md`, also not provisioned yet.
 
 ## Adding a page
 

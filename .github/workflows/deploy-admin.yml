@@ -1,0 +1,82 @@
+name: Deploy admin console to Cloud Run
+
+on:
+  push:
+    branches: [main]
+    paths: ["admin/**"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: lumenical-admin-deploy
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: admin/.nvmrc
+          cache: npm
+          cache-dependency-path: admin/package-lock.json
+
+      - name: Install dependencies
+        working-directory: admin
+        run: npm ci
+
+      - name: Lint
+        working-directory: admin
+        run: npm run lint
+
+      - name: Type check
+        working-directory: admin
+        run: npx tsc --noEmit
+
+      - name: Build
+        working-directory: admin
+        run: npm run build
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Requires the WIF binding + lumenical-admin-deployer service account
+      # documented in docs/infrastructure-admin.md — neither exists yet, so
+      # this job will fail authentication until that's provisioned. The
+      # build job above needs no GCP access and works today.
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: projects/577809123018/locations/global/workloadIdentityPools/github-actions/providers/github
+          service_account: lumenical-admin-deployer@lumenical-ai.iam.gserviceaccount.com
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker us-central1-docker.pkg.dev --quiet
+
+      - name: Build and push image
+        working-directory: admin
+        run: |
+          docker build -t us-central1-docker.pkg.dev/lumenical-ai/lumenical-admin/admin:${{ github.sha }} .
+          docker push us-central1-docker.pkg.dev/lumenical-ai/lumenical-admin/admin:${{ github.sha }}
+
+      - name: Deploy to Cloud Run
+        run: |
+          gcloud run deploy lumenical-admin \
+            --image=us-central1-docker.pkg.dev/lumenical-ai/lumenical-admin/admin:${{ github.sha }} \
+            --region=us-central1 \
+            --project=lumenical-ai \
+            --quiet
