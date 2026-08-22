@@ -39,6 +39,12 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      # PageProps<"/route"> (used by every [slug] page) is a global type
+      # Next generates from the route tree, not part of the checked-in
+      # source — tsc can't see it until this runs first.
+      - name: Generate route types
+        run: npx next typegen
+
       - name: Type check
         run: npx tsc --noEmit
 
