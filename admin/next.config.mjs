@@ -14,6 +14,13 @@ const nextConfig = {
   // and page routing pick this up automatically; plain fetch() calls don't
   // and need that constant manually) and firebase.json's rewrite source.
   basePath: "/website",
+  // firebase.json's rewrite source is "/website/**", which requires the
+  // trailing slash to match at all -- without this, Next's default
+  // trailing-slash-stripping redirect (/website/ -> /website) sends every
+  // real request to a URL the rewrite doesn't cover, which then falls
+  // through to the marketing app's own static 404 page. Confirmed live:
+  // this was breaking every visit to lumenical.com/website/ in production.
+  trailingSlash: true,
   // Without this, Turbopack finds the marketing app's lockfile one level up
   // and infers the wrong workspace root — this repo isn't an npm workspace,
   // admin/ is fully independent (see CLAUDE.md).
