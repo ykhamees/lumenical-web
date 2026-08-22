@@ -3,6 +3,7 @@ from fastapi import FastAPI
 from .routers import (
     admin,
     admin_demos,
+    admin_deploy,
     admin_leads,
     admin_logs,
     admin_media,
@@ -25,3 +26,4 @@ app.include_router(admin_pages.router, prefix="/api")
 app.include_router(admin_demos.router, prefix="/api")
 app.include_router(admin_media.router, prefix="/api")
 app.include_router(admin_logs.router, prefix="/api")
+app.include_router(admin_deploy.router, prefix="/api")

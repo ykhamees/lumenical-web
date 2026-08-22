@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { type ReactNode } from "react";
 import { useAdminAuth } from "@/lib/auth";
+import { DeployStatusBadge } from "./DeployStatusBadge";
 import { LoginForm } from "./LoginForm";
 
 const NAV_LINKS = [
@@ -93,6 +94,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
           </nav>
         </div>
         <div className="flex items-center gap-4 text-sm text-text-2">
+          <DeployStatusBadge />
           <span>{user?.email}</span>
           <span className="rounded-full border border-border-2 px-2 py-0.5 text-xs uppercase text-text-3">
             {role}

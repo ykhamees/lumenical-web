@@ -28,6 +28,7 @@ class PageCreate(BaseModel):
     body: str = ""
     seo: SeoFields = Field(default_factory=SeoFields)
     order: int = 0
+    tags: list[str] = Field(default_factory=list)
 
 
 class PageUpdate(BaseModel):
@@ -38,6 +39,7 @@ class PageUpdate(BaseModel):
     body: str = ""
     seo: SeoFields = Field(default_factory=SeoFields)
     order: int = 0
+    tags: list[str] = Field(default_factory=list)
 
 
 class PageOut(BaseModel):
@@ -49,6 +51,7 @@ class PageOut(BaseModel):
     body: str = ""
     seo: SeoFields = Field(default_factory=SeoFields)
     order: int = 0
+    tags: list[str] = Field(default_factory=list)
     status: str = "draft"
     created_at: datetime | None = Field(default=None, alias="createdAt")
     updated_at: datetime | None = Field(default=None, alias="updatedAt")

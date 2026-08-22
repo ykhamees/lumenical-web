@@ -592,7 +592,15 @@ Roughly 4–6 days. Depends on Phase 4.
 
 - **5.1** Build-time Firestore reads feeding `generateStaticParams` for published `demos`
   and `pages`, with a clear build failure (not a silent empty page) if Firestore is
-  unreachable.
+  unreachable. **Refined 2026-08-22:** gated behind `NEXT_PUBLIC_CMS_LIVE` (unset by
+  default) — no live Firestore project exists yet, and wiring the literal "fails loudly"
+  behavior in before that's provisioned would break `deploy.yml`'s currently-working build
+  on every push. Unset → zero Firestore calls attempted, `/demos/`/`/insights/` render a
+  "coming soon" state, excluded from nav/sitemap. Once the owner provisions Firestore and
+  sets it `true`, an unreachable/misconfigured Firestore fails the build loudly exactly as
+  originally specified. Uses the client Firestore SDK against `firestore.rules`' existing
+  public-read grant for published docs — no `firebase-admin`/ADC/WIF needed for this. See
+  `src/lib/cms.ts`.
 - **5.2** `/demos/` and `/demos/[slug]/` — the strongest available "we build AI" proof
   under D-3, since it's your own work rather than client stories.
 - **5.3** `/insights/` and `/insights/[slug]/` (O-6) — article schema, reading time, tags,

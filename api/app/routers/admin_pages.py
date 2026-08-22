@@ -7,6 +7,7 @@ from google.cloud.firestore_v1.base_query import FieldFilter
 from ..audit import DocumentNotFoundError, record_deletion, record_status_change
 from ..auth import AdminUser, require_admin_only, require_admin_user
 from ..cms_models import ContentStatus, PageCreate, PageListResponse, PageOut, PageUpdate
+from ..deploy import trigger_rebuild
 from ..firestore_client import get_db
 from ..sanitize import sanitize_html
 
@@ -62,6 +63,7 @@ async def create_page(
         "body": sanitize_html(payload.body),
         "seo": payload.seo.model_dump(),
         "order": payload.order,
+        "tags": payload.tags,
         "status": "draft",
         "createdAt": now,
         "updatedAt": now,
@@ -87,6 +89,7 @@ async def update_page(
             "body": sanitize_html(payload.body),
             "seo": payload.seo.model_dump(),
             "order": payload.order,
+            "tags": payload.tags,
             "updatedAt": datetime.now(UTC),
         }
     )
@@ -98,7 +101,7 @@ async def update_page(
 async def publish_page(slug: str, user: AdminUser = Depends(require_admin_user)) -> PageOut:
     db = get_db()
     try:
-        record_status_change(
+        before_status = record_status_change(
             db,
             collection="pages",
             doc_id=slug,
@@ -110,6 +113,9 @@ async def publish_page(slug: str, user: AdminUser = Depends(require_admin_user))
     except DocumentNotFoundError:
         raise HTTPException(status_code=404, detail="Page not found") from None
 
+    if before_status != "published":
+        trigger_rebuild(f"page.published:{slug}")
+
     snapshot = db.collection("pages").document(slug).get()
     return PageOut(slug=slug, **(snapshot.to_dict() or {}))
 
@@ -118,7 +124,7 @@ async def publish_page(slug: str, user: AdminUser = Depends(require_admin_user))
 async def unpublish_page(slug: str, user: AdminUser = Depends(require_admin_user)) -> PageOut:
     db = get_db()
     try:
-        record_status_change(
+        before_status = record_status_change(
             db,
             collection="pages",
             doc_id=slug,
@@ -128,6 +134,9 @@ async def unpublish_page(slug: str, user: AdminUser = Depends(require_admin_user
         )
     except DocumentNotFoundError:
         raise HTTPException(status_code=404, detail="Page not found") from None
+
+    if before_status != "draft":
+        trigger_rebuild(f"page.unpublished:{slug}")
 
     snapshot = db.collection("pages").document(slug).get()
     return PageOut(slug=slug, **(snapshot.to_dict() or {}))

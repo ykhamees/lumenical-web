@@ -31,5 +31,11 @@ class Settings(BaseSettings):
     rate_limit_window_seconds: int = 600  # 10 minutes
     rate_limit_per_email_per_day: int = 3
 
+    # GitHub repository_dispatch (build-plan.md 4.7). Unset => publish/
+    # unpublish still succeed (Firestore is the durable write); the static
+    # site just doesn't rebuild until the next push to main.
+    github_dispatch_token: str | None = None
+    github_repository: str | None = None  # "owner/repo"
+
 
 settings = Settings()

@@ -22,6 +22,7 @@ export type PageInput = {
   body: string;
   seo: SeoFields;
   order: number;
+  tags: string[];
 };
 
 export async function createPage(slug: string, input: PageInput): Promise<Page> {

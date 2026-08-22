@@ -51,6 +51,12 @@ Both forms `POST` same-origin JSON to the real API: `NewsletterForm.tsx` → `/a
 
 **The API itself** (`api/`, FastAPI + Firestore, Cloudflare Turnstile verification, best-effort Resend email) is fully built and tested against the local Firestore emulator — see `api/README.md`. **It is not yet deployed to any live GCP infrastructure** — see `docs/infrastructure.md` for exactly what Phase 3.2 still needs to provision. Until it's deployed, form submissions in production either simulate (if `NEXT_PUBLIC_SIMULATE_FORMS` is set) or fail against a route that doesn't resolve yet.
 
+## CMS-driven pages
+
+`/demos/` and `/insights/` (with an `/insights/rss.xml` feed) read published content directly from Firestore at build time via `src/lib/cms.ts`, using the public client SDK against `firestore.rules`' existing unauthenticated read grant for published docs — no admin credential needed. Gated behind `NEXT_PUBLIC_CMS_LIVE` (unset by default, since no live Firestore project exists yet): unset means both routes render an empty "coming soon" state with zero Firestore calls and are excluded from nav/sitemap; once set `true`, an unreachable Firestore fails the build loudly instead. See `docs/build-plan.md` Phase 5.
+
+To test locally against the Firestore emulator, build with `next build --webpack` rather than the default Turbopack build — `connectFirestoreEmulator`'s redirect doesn't reliably take effect under Turbopack's static-generation workers (see the comment at the top of `src/lib/cms.ts`); this only affects local emulator testing, not production.
+
 ## Analytics
 
 Cookieless via [Plausible](https://plausible.io) — no consent banner needed. A no-op unless `NEXT_PUBLIC_PLAUSIBLE_DOMAIN` is set (see `.env.example`); wired in `src/app/layout.tsx`. Core Web Vitals are forwarded to Plausible as a custom event by `src/components/WebVitalsReporter.tsx`, itself a no-op if Plausible never loaded.

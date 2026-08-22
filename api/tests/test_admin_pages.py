@@ -75,6 +75,39 @@ def test_body_html_is_sanitized(client: TestClient, admin_token: str) -> None:
     assert "safe" in resp.json()["body"]
 
 
+def test_tags_round_trip(client: TestClient, admin_token: str) -> None:
+    slug = _slug()
+    headers = {"Authorization": f"Bearer {admin_token}"}
+
+    resp = client.post(
+        "/api/admin/pages",
+        json={"slug": slug, "title": "T", "body": "", "tags": ["ai", "platforms"]},
+        headers=headers,
+    )
+    assert resp.status_code == 201
+    assert resp.json()["tags"] == ["ai", "platforms"]
+
+    resp = client.get(f"/api/admin/pages/{slug}", headers=headers)
+    assert resp.json()["tags"] == ["ai", "platforms"]
+
+    resp = client.patch(
+        f"/api/admin/pages/{slug}",
+        json={"title": "T", "body": "", "tags": ["updated"]},
+        headers=headers,
+    )
+    assert resp.json()["tags"] == ["updated"]
+
+
+def test_create_defaults_to_no_tags(client: TestClient, admin_token: str) -> None:
+    slug = _slug()
+    resp = client.post(
+        "/api/admin/pages",
+        json={"slug": slug, "title": "T", "body": ""},
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+    assert resp.json()["tags"] == []
+
+
 def test_update_page(client: TestClient, admin_token: str) -> None:
     slug = _slug()
     headers = {"Authorization": f"Bearer {admin_token}"}

@@ -48,6 +48,7 @@ export function PageEditor({
   const [seoTitle, setSeoTitle] = useState("");
   const [seoDescription, setSeoDescription] = useState("");
   const [order, setOrder] = useState(0);
+  const [tagsInput, setTagsInput] = useState("");
 
   // No synchronous setState here on purpose — the parent keys this
   // component by the "page" query param, so switching items (or from
@@ -66,6 +67,7 @@ export function PageEditor({
         setSeoTitle(data.seo.title ?? "");
         setSeoDescription(data.seo.description ?? "");
         setOrder(data.order);
+        setTagsInput(data.tags.join(", "));
       })
       .catch(() => {
         if (!cancelled) setError("Could not load this page.");
@@ -94,6 +96,10 @@ export function PageEditor({
       body,
       seo: { title: seoTitle || null, description: seoDescription || null },
       order,
+      tags: tagsInput
+        .split(",")
+        .map((tag) => tag.trim())
+        .filter(Boolean),
     };
     try {
       if (isNew) {
@@ -248,6 +254,13 @@ export function PageEditor({
               type="number"
               value={order}
               onChange={(e) => setOrder(Number(e.target.value))}
+              className={inputClass}
+            />
+          </Field>
+          <Field label="Tags (comma-separated)">
+            <input
+              value={tagsInput}
+              onChange={(e) => setTagsInput(e.target.value)}
               className={inputClass}
             />
           </Field>

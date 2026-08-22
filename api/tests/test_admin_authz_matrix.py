@@ -76,6 +76,7 @@ ENDPOINTS: list[tuple[str, str, dict[str, object] | None, set[str]]] = [
     ("DELETE", "/api/admin/media/does-not-exist", None, set()),
     ("GET", "/api/admin/audit-log", None, set()),
     ("GET", "/api/admin/outbound-emails", None, set()),
+    ("GET", "/api/admin/deploy-status", None, {"editor"}),
 ]
 
 

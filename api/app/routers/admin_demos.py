@@ -8,6 +8,7 @@ from google.cloud.firestore_v1.base_query import FieldFilter
 from ..audit import DocumentNotFoundError, record_deletion, record_status_change
 from ..auth import AdminUser, require_admin_only, require_admin_user
 from ..cms_models import ContentStatus, DemoCreate, DemoListResponse, DemoOut, DemoUpdate
+from ..deploy import trigger_rebuild
 from ..firestore_client import get_db
 from ..sanitize import sanitize_html
 
@@ -113,7 +114,7 @@ async def update_demo(
 async def publish_demo(demo_id: str, user: AdminUser = Depends(require_admin_user)) -> DemoOut:
     db = get_db()
     try:
-        record_status_change(
+        before_status = record_status_change(
             db,
             collection="demos",
             doc_id=demo_id,
@@ -125,6 +126,9 @@ async def publish_demo(demo_id: str, user: AdminUser = Depends(require_admin_use
     except DocumentNotFoundError:
         raise HTTPException(status_code=404, detail="Demo not found") from None
 
+    if before_status != "published":
+        trigger_rebuild(f"demo.published:{demo_id}")
+
     snapshot = db.collection("demos").document(demo_id).get()
     return DemoOut(id=demo_id, **(snapshot.to_dict() or {}))
 
@@ -133,7 +137,7 @@ async def publish_demo(demo_id: str, user: AdminUser = Depends(require_admin_use
 async def unpublish_demo(demo_id: str, user: AdminUser = Depends(require_admin_user)) -> DemoOut:
     db = get_db()
     try:
-        record_status_change(
+        before_status = record_status_change(
             db,
             collection="demos",
             doc_id=demo_id,
@@ -143,6 +147,9 @@ async def unpublish_demo(demo_id: str, user: AdminUser = Depends(require_admin_u
         )
     except DocumentNotFoundError:
         raise HTTPException(status_code=404, detail="Demo not found") from None
+
+    if before_status != "draft":
+        trigger_rebuild(f"demo.unpublished:{demo_id}")
 
     snapshot = db.collection("demos").document(demo_id).get()
     return DemoOut(id=demo_id, **(snapshot.to_dict() or {}))

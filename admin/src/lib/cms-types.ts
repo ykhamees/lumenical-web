@@ -14,6 +14,7 @@ export type Page = {
   body: string;
   seo: SeoFields;
   order: number;
+  tags: string[];
   status: ContentStatus;
   createdAt: string | null;
   updatedAt: string | null;
