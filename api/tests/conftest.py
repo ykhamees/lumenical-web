@@ -44,15 +44,21 @@ def emulators() -> Iterator[None]:
     # entirely), which is exactly why the CI startup failures below were so
     # hard to diagnose: every one showed only "connection refused", never
     # the actual reason the emulator process wasn't listening.
+    #
+    # A single command STRING, not a list — with shell=True, POSIX's
+    # `sh -c` treats a list's first element as the whole script and
+    # everything after it as that shell's own positional params ($0, $1...),
+    # never as arguments to `firebase` at all. That silently ran bare
+    # `firebase` (no subcommand) on every Linux CI run — confirmed by the
+    # emulator's own captured stdout being the CLI's top-level usage/help
+    # text, not emulator startup logs. Windows's shell=True instead joins a
+    # list into one command line for cmd.exe, which is why this only ever
+    # worked locally on Windows.
+    command = (
+        f"firebase emulators:start --only firestore,auth,storage --project {TEST_PROJECT}"
+    )
     proc = subprocess.Popen(
-        [
-            "firebase",
-            "emulators:start",
-            "--only",
-            "firestore,auth,storage",
-            "--project",
-            TEST_PROJECT,
-        ],
+        command,
         cwd=REPO_ROOT,
         shell=True,
         text=True,
