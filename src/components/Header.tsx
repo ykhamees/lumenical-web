@@ -5,7 +5,6 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { navLinks } from "@/content/routes";
 import { Container } from "./Container";
-import { ThemeToggle } from "./ThemeToggle";
 import { WordmarkLink } from "./Wordmark";
 
 export function Header() {
@@ -92,11 +91,9 @@ export function Header() {
           >
             Get in touch
           </Link>
-          <ThemeToggle />
         </nav>
 
         <div className="flex items-center gap-3 md:hidden">
-          <ThemeToggle />
           <button
             ref={toggleRef}
             type="button"

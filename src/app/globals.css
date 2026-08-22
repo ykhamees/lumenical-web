@@ -20,26 +20,9 @@
     --link: #2e649f;
   }
 
-  .dark {
-    --bg: #07101d;
-    --surface: #0e1a2b;
-    --surface-2: #0a1421;
-    --border: #25364f;
-    --border-2: #324562;
-    --text-1: #faf7f2;
-    --text-2: #bfc8d5;
-    --text-3: #8694a9;
-    --text-label: #94a1b5;
-    --text-hover: #dfe4ec;
-    --cta-bg: #faf7f2;
-    --cta-bg-hover: #dfe4ec;
-    --cta-text: #0e1a2b;
-    --link: #6c9bd0;
-  }
-
   html {
     scroll-behavior: smooth;
-    color-scheme: light dark;
+    color-scheme: light;
   }
 
   @media (prefers-reduced-motion: reduce) {
