@@ -1,7 +1,6 @@
 import type { Config } from "tailwindcss";
 
 const config: Config = {
-  darkMode: "class",
   content: ["./src/**/*.{js,ts,jsx,tsx,mdx}"],
   theme: {
     extend: {
@@ -43,10 +42,9 @@ const config: Config = {
         success: {
           500: "#2E8056",
         },
-        // Semantic surface/text roles — the dark-mode token layer. Values
-        // are CSS custom properties (defined per-theme in globals.css) so
-        // no component ever hardcodes a surface colour; see design-guide.md
-        // for the light/dark ramps these are drawn from.
+        // Semantic surface/text roles. Values are CSS custom properties
+        // (defined in globals.css) so no component ever hardcodes a
+        // surface colour; see design-guide.md for the ramp these draw from.
         bg: "var(--bg)",
         surface: "var(--surface)",
         "surface-2": "var(--surface-2)",

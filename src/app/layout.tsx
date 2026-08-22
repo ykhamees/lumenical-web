@@ -9,8 +9,6 @@ import { WebVitalsReporter } from "@/components/WebVitalsReporter";
 import { site } from "@/content/site";
 import "./globals.css";
 
-const THEME_INIT_SCRIPT = `(function(){try{var t=localStorage.getItem('theme');var d=t==='dark'||(!t&&window.matchMedia('(prefers-color-scheme: dark)').matches);document.documentElement.classList.toggle('dark',d);}catch(e){}})();`;
-
 // Cookieless, no consent banner required — see /privacy/. A no-op unless
 // this repo variable is actually set (see .env.example).
 const PLAUSIBLE_DOMAIN = process.env.NEXT_PUBLIC_PLAUSIBLE_DOMAIN;
@@ -66,11 +64,8 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#faf7f2" },
-    { media: "(prefers-color-scheme: dark)", color: "#07101d" },
-  ],
-  colorScheme: "light dark",
+  themeColor: "#faf7f2",
+  colorScheme: "light",
 };
 
 export default function RootLayout({
@@ -82,12 +77,8 @@ export default function RootLayout({
     <html
       lang="en"
       className={`${geist.variable} ${instrumentSerif.variable} ${jetbrainsMono.variable}`}
-      suppressHydrationWarning
     >
       <body className="flex min-h-screen flex-col">
-        <Script id="theme-init" strategy="beforeInteractive">
-          {THEME_INIT_SCRIPT}
-        </Script>
         <a href="#content" className="skip-link">
           Skip to content
         </a>
