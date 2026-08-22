@@ -73,9 +73,15 @@ def emulators() -> Iterator[None]:
                 proc.kill()
 
     try:
-        _wait_for_http(f"http://{FIRESTORE_EMULATOR_HOST}/", timeout=45)
-        _wait_for_http(f"http://{AUTH_EMULATOR_HOST}/", timeout=45)
-        _wait_for_http(f"http://{STORAGE_EMULATOR_HOST}/", timeout=45)
+        # 45s was tuned against a warm local machine that already had the
+        # emulator JARs cached — a CI runner with no cache has to download
+        # them (Firestore's especially) first, which alone can take longer
+        # than that. Reproduced on the real GitHub Actions runner: every
+        # test failed with "did not start in time" on api/'s first-ever CI
+        # run, not a flaky one-off.
+        _wait_for_http(f"http://{FIRESTORE_EMULATOR_HOST}/", timeout=120)
+        _wait_for_http(f"http://{AUTH_EMULATOR_HOST}/", timeout=120)
+        _wait_for_http(f"http://{STORAGE_EMULATOR_HOST}/", timeout=120)
     except Exception:
         # A startup failure here must still kill the subprocess — raising
         # before yield means pytest never runs the code below, which would
