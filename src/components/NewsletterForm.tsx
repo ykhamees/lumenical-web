@@ -7,6 +7,11 @@ import { Turnstile } from "./Turnstile";
 // NEXT_PUBLIC_SIMULATE_FORMS is a local dev escape hatch only (see
 // .env.example) — never set in production.
 const SIMULATE = process.env.NEXT_PUBLIC_SIMULATE_FORMS === "true";
+// Turnstile's invisible/managed check runs asynchronously after the widget
+// script loads — a few hundred ms at best. Unset in dev/local (no
+// Cloudflare account), matching Turnstile.tsx's own gate, so this never
+// blocks submission where the server-side check is skipped anyway.
+const TURNSTILE_REQUIRED = Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY);
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 type Status = "idle" | "submitting" | "success" | "error";
@@ -113,10 +118,17 @@ export function NewsletterForm() {
           />
           <button
             type="submit"
-            disabled={status === "submitting"}
+            disabled={
+              status === "submitting" ||
+              (TURNSTILE_REQUIRED && !turnstileToken)
+            }
             className="whitespace-nowrap rounded-md bg-cta px-4 py-2.5 text-sm font-medium text-on-cta transition-colors hover:bg-cta-hover disabled:cursor-default"
           >
-            {status === "submitting" ? "Adding…" : "Notify me"}
+            {status === "submitting"
+              ? "Adding…"
+              : TURNSTILE_REQUIRED && !turnstileToken
+                ? "Verifying…"
+                : "Notify me"}
           </button>
         </div>
 
