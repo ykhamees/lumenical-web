@@ -38,6 +38,12 @@ def emulators() -> Iterator[None]:
     no live GCP project touched, per docs/build-plan.md 3.1's accept
     criteria.
     """
+    # Inherits this process's stdout/stderr rather than piping — a piped
+    # buffer that's never read anywhere was silently swallowing the
+    # emulator's own output on every failure (including the CLI missing
+    # entirely), which is exactly why the CI startup failures below were so
+    # hard to diagnose: every one showed only "connection refused", never
+    # the actual reason the emulator process wasn't listening.
     proc = subprocess.Popen(
         [
             "firebase",
@@ -48,8 +54,6 @@ def emulators() -> Iterator[None]:
             TEST_PROJECT,
         ],
         cwd=REPO_ROOT,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
         shell=True,
         text=True,
     )
