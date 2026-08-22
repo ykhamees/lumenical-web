@@ -47,6 +47,15 @@ jobs:
         with:
           node-version-file: .nvmrc
 
+      # firebase-tools downloads the emulator JARs on first use — without
+      # this, every run on a fresh runner re-downloads them, which is what
+      # made api/'s first-ever CI run here exceed conftest.py's wait timeout.
+      - name: Cache Firebase emulator binaries
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/firebase/emulators
+          key: firebase-emulators-${{ runner.os }}
+
       - name: Run tests (against the real Firestore emulator)
         working-directory: api
         run: uv run pytest
