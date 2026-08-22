@@ -1,9 +1,14 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
+import { Turnstile } from "./Turnstile";
 
-const FORM_ENDPOINT = process.env.NEXT_PUBLIC_CONTACT_FORM_ENDPOINT ?? "";
+// Same-origin — Firebase Hosting rewrites /api/** to the Cloud Run API, so
+// no CORS, no configurable endpoint. NEXT_PUBLIC_SIMULATE_FORMS is a local
+// dev escape hatch only (see .env.example) — never set in production.
+const SIMULATE = process.env.NEXT_PUBLIC_SIMULATE_FORMS === "true";
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const ERROR_ID = "contact-form-error";
 
 type Status = "idle" | "submitting" | "success" | "error";
 
@@ -12,8 +17,21 @@ export function ContactForm() {
   const [email, setEmail] = useState("");
   const [companySize, setCompanySize] = useState("");
   const [message, setMessage] = useState("");
+  const [website, setWebsite] = useState(""); // honeypot
+  const [turnstileToken, setTurnstileToken] = useState("");
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState("");
+  const successRef = useRef<HTMLDivElement>(null);
+
+  const handleTurnstileToken = useCallback((token: string) => {
+    setTurnstileToken(token);
+  }, []);
+
+  useEffect(() => {
+    if (status === "success") {
+      successRef.current?.focus();
+    }
+  }, [status]);
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -26,21 +44,24 @@ export function ContactForm() {
     setError("");
     setStatus("submitting");
 
-    const payload = { name, email, companySize, message };
-
-    if (!FORM_ENDPOINT) {
-      // No backend configured yet — simulates success locally.
-      // See README for wiring up a real submission endpoint.
+    if (SIMULATE) {
       await new Promise((resolve) => setTimeout(resolve, 500));
       setStatus("success");
       return;
     }
 
     try {
-      const res = await fetch(FORM_ENDPOINT, {
+      const res = await fetch("/api/leads", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({
+          name,
+          email,
+          companySize,
+          message,
+          website,
+          turnstileToken,
+        }),
       });
       if (res.ok) {
         setStatus("success");
@@ -55,17 +76,35 @@ export function ContactForm() {
 
   if (status === "success") {
     return (
-      <div className="rounded-lg border border-success-500/40 bg-success-500/[0.06] p-6 text-sm leading-relaxed text-ink-800">
+      <div
+        ref={successRef}
+        role="status"
+        tabIndex={-1}
+        className="rounded-lg border border-success-500/40 bg-success-500/[0.06] p-6 text-sm leading-relaxed text-text-1 outline-none"
+      >
         Thank you, {name.split(" ")[0] || "there"}.{" "}
-        <em className="font-serif italic text-ink-700">
+        <em className="font-serif italic text-text-hover">
           We&rsquo;ll be in touch within one business day.
         </em>
       </div>
     );
   }
 
+  const invalid = status === "error" || Boolean(error);
+
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+      <input
+        type="text"
+        name="website"
+        value={website}
+        onChange={(e) => setWebsite(e.target.value)}
+        tabIndex={-1}
+        autoComplete="off"
+        aria-hidden="true"
+        className="absolute left-[-9999px] h-0 w-0 opacity-0"
+      />
+
       <div className="grid gap-5 sm:grid-cols-2">
         <Field label="Name">
           <input
@@ -74,6 +113,8 @@ export function ContactForm() {
             onChange={(e) => setName(e.target.value)}
             required
             autoComplete="name"
+            aria-invalid={invalid}
+            aria-describedby={error ? ERROR_ID : undefined}
             className={inputClass}
           />
         </Field>
@@ -84,6 +125,8 @@ export function ContactForm() {
             onChange={(e) => setEmail(e.target.value)}
             required
             autoComplete="email"
+            aria-invalid={invalid}
+            aria-describedby={error ? ERROR_ID : undefined}
             className={inputClass}
           />
         </Field>
@@ -110,16 +153,26 @@ export function ContactForm() {
           onChange={(e) => setMessage(e.target.value)}
           required
           rows={5}
+          aria-invalid={invalid}
+          aria-describedby={error ? ERROR_ID : undefined}
           className={inputClass}
         />
       </Field>
 
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      <Turnstile onToken={handleTurnstileToken} />
+
+      <div aria-live="polite">
+        {error && (
+          <p id={ERROR_ID} role="alert" className="text-sm text-red-600">
+            {error}
+          </p>
+        )}
+      </div>
 
       <button
         type="submit"
         disabled={status === "submitting"}
-        className="w-fit rounded-md bg-ink-900 px-6 py-3 text-sm font-medium text-paper-50 transition-colors hover:bg-ink-700 disabled:cursor-default"
+        className="w-fit rounded-md bg-cta px-6 py-3 text-sm font-medium text-on-cta transition-colors hover:bg-cta-hover disabled:cursor-default"
       >
         {status === "submitting" ? "Sending…" : "Send message"}
       </button>
@@ -128,7 +181,7 @@ export function ContactForm() {
 }
 
 const inputClass =
-  "w-full rounded-md border border-paper-300 bg-white px-3 py-2.5 text-[15px] text-ink-900 outline-none transition-colors focus:border-signal-500 focus:shadow-[0_0_0_3px_theme(colors.signal.100)]";
+  "w-full rounded-md border border-border bg-surface px-3 py-2.5 text-[15px] text-text-1 outline-none transition-colors focus:border-signal-500 focus:shadow-[0_0_0_3px_theme(colors.signal.100)]";
 
 function Field({
   label,
@@ -139,7 +192,7 @@ function Field({
 }) {
   return (
     <label className="flex flex-col gap-2">
-      <span className="font-mono text-[11px] uppercase tracking-[0.1em] text-ink-500">
+      <span className="font-mono text-[11px] uppercase tracking-[0.1em] text-text-label">
         {label}
       </span>
       {children}

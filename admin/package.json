@@ -1,0 +1,36 @@
+{
+  "name": "lumenical-admin",
+  "version": "0.1.0",
+  "private": true,
+  "engines": {
+    "node": ">=20 <21"
+  },
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "@tiptap/react": "^3.30.2",
+    "@tiptap/starter-kit": "^3.30.2",
+    "firebase": "^12.18.0",
+    "firebase-admin": "^13.0.0",
+    "google-auth-library": "^9.14.0",
+    "isomorphic-dompurify": "^3.19.0",
+    "next": "^16.3.1",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
+    "autoprefixer": "^10.4.20",
+    "eslint": "^9.17.0",
+    "eslint-config-next": "^16.3.1",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5.7.2"
+  }
+}

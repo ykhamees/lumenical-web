@@ -1,0 +1,30 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .claude/hooks/guard-generated-files.js",
+            "timeout": 10,
+            "statusMessage": "Checking file isn't generated..."
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .claude/hooks/lint-changed-file.js",
+            "timeout": 30,
+            "statusMessage": "Linting changed file..."
+          }
+        ]
+      }
+    ]
+  }
+}

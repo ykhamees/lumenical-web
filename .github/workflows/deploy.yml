@@ -3,6 +3,13 @@ name: Deploy to Firebase Hosting
 on:
   push:
     branches: [main]
+  # Fired by api/app/deploy.py's trigger_rebuild() on publish/unpublish
+  # (build-plan.md 4.7) — rebuilds with fresh Firestore content (A-3)
+  # without waiting for a push to main. Same job, same concurrency group
+  # below, so an overlapping publish coalesces rather than queueing a
+  # second deploy.
+  repository_dispatch:
+    types: [content-published]
   workflow_dispatch:
 
 permissions:
@@ -23,16 +30,42 @@ jobs:
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version-file: .nvmrc
           cache: npm
 
       - name: Install dependencies
         run: npm ci
 
+      - name: Lint
+        run: npm run lint
+
+      # PageProps<"/route"> (used by every [slug] page) is a global type
+      # Next generates from the route tree, not part of the checked-in
+      # source — tsc can't see it until this runs first.
+      - name: Generate route types
+        run: npx next typegen
+
+      - name: Type check
+        run: npx tsc --noEmit
+
       - name: Build
         env:
-          NEXT_PUBLIC_NEWSLETTER_SCRIPT_URL: ${{ vars.NEWSLETTER_SCRIPT_URL }}
-          NEXT_PUBLIC_CONTACT_FORM_ENDPOINT: ${{ vars.CONTACT_FORM_ENDPOINT }}
+          NEXT_PUBLIC_PLAUSIBLE_DOMAIN: ${{ vars.PLAUSIBLE_DOMAIN }}
+          NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${{ vars.TURNSTILE_SITE_KEY }}
+          # Public Firebase config for /demos/ and /insights/'s build-time
+          # Firestore reads (docs/build-plan.md Phase 5) — same project as
+          # admin/'s own config, different purpose (public content reads,
+          # not admin auth). See @/lib/cms.
+          NEXT_PUBLIC_FIREBASE_API_KEY: ${{ vars.FIREBASE_API_KEY }}
+          NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: ${{ vars.FIREBASE_AUTH_DOMAIN }}
+          NEXT_PUBLIC_FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
+          # Deliberately never set until Firestore is actually provisioned
+          # (docs/infrastructure.md) — unset keeps /demos/ and /insights/ a
+          # zero-Firestore-calls "coming soon" state so this build step
+          # can't start failing before that's ready.
+          NEXT_PUBLIC_CMS_LIVE: ${{ vars.CMS_LIVE }}
+          # NEXT_PUBLIC_SIMULATE_FORMS is deliberately never set here — forms
+          # must always attempt the real /api/** call in production.
         run: npm run build
 
       - name: Authenticate to Google Cloud
