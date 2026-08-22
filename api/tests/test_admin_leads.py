@@ -33,7 +33,7 @@ def test_list_leads_paginates(client: TestClient, admin_token: str) -> None:
     resp = client.get(
         "/api/admin/leads",
         params={"limit": 2},
-        headers={"Authorization": f"Bearer {admin_token}"},
+        headers={"X-Firebase-Id-Token": f"Bearer {admin_token}"},
     )
     assert resp.status_code == 200
     body = resp.json()
@@ -43,7 +43,7 @@ def test_list_leads_paginates(client: TestClient, admin_token: str) -> None:
     resp2 = client.get(
         "/api/admin/leads",
         params={"limit": 2, "cursor": body["nextCursor"]},
-        headers={"Authorization": f"Bearer {admin_token}"},
+        headers={"X-Firebase-Id-Token": f"Bearer {admin_token}"},
     )
     assert resp2.status_code == 200
     body2 = resp2.json()
@@ -59,7 +59,7 @@ def test_list_leads_filters_by_status(client: TestClient, admin_token: str) -> N
     resp = client.get(
         "/api/admin/leads",
         params={"status": "won"},
-        headers={"Authorization": f"Bearer {admin_token}"},
+        headers={"X-Firebase-Id-Token": f"Bearer {admin_token}"},
     )
     assert resp.status_code == 200
     body = resp.json()
@@ -70,7 +70,7 @@ def test_list_leads_filters_by_status(client: TestClient, admin_token: str) -> N
 def test_get_lead_404_for_unknown_id(client: TestClient, admin_token: str) -> None:
     resp = client.get(
         "/api/admin/leads/does-not-exist",
-        headers={"Authorization": f"Bearer {admin_token}"},
+        headers={"X-Firebase-Id-Token": f"Bearer {admin_token}"},
     )
     assert resp.status_code == 404
 
@@ -81,7 +81,7 @@ def test_update_status_writes_audit_log(client: TestClient, admin_token: str) ->
     resp = client.patch(
         f"/api/admin/leads/{lead_id}",
         json={"status": "contacted"},
-        headers={"Authorization": f"Bearer {admin_token}"},
+        headers={"X-Firebase-Id-Token": f"Bearer {admin_token}"},
     )
     assert resp.status_code == 200
     assert resp.json()["status"] == "contacted"
@@ -107,7 +107,7 @@ def test_update_status_404_for_unknown_id(client: TestClient, admin_token: str) 
     resp = client.patch(
         "/api/admin/leads/does-not-exist",
         json={"status": "contacted"},
-        headers={"Authorization": f"Bearer {admin_token}"},
+        headers={"X-Firebase-Id-Token": f"Bearer {admin_token}"},
     )
     assert resp.status_code == 404
 
@@ -118,7 +118,7 @@ def test_update_status_rejects_invalid_status(client: TestClient, admin_token: s
     resp = client.patch(
         f"/api/admin/leads/{lead_id}",
         json={"status": "not-a-real-status"},
-        headers={"Authorization": f"Bearer {admin_token}"},
+        headers={"X-Firebase-Id-Token": f"Bearer {admin_token}"},
     )
     assert resp.status_code == 422
 
@@ -129,7 +129,7 @@ def test_add_note(client: TestClient, admin_token: str) -> None:
     resp = client.post(
         f"/api/admin/leads/{lead_id}/notes",
         json={"text": "Called, left voicemail."},
-        headers={"Authorization": f"Bearer {admin_token}"},
+        headers={"X-Firebase-Id-Token": f"Bearer {admin_token}"},
     )
     assert resp.status_code == 200
     notes = resp.json()["notes"]
@@ -142,6 +142,6 @@ def test_add_note_404_for_unknown_id(client: TestClient, admin_token: str) -> No
     resp = client.post(
         "/api/admin/leads/does-not-exist/notes",
         json={"text": "hi"},
-        headers={"Authorization": f"Bearer {admin_token}"},
+        headers={"X-Firebase-Id-Token": f"Bearer {admin_token}"},
     )
     assert resp.status_code == 404

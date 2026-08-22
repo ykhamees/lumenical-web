@@ -7,6 +7,7 @@ import {
   type User,
 } from "firebase/auth";
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { BASE_PATH } from "./base-path";
 import { auth } from "./firebase-client";
 
 type Role = "admin" | "editor" | null;
@@ -47,7 +48,7 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
       setRole(nextRole === "admin" || nextRole === "editor" ? nextRole : null);
       setStatus("signed-in");
 
-      await fetch("/api/session", {
+      await fetch(`${BASE_PATH}/api/session`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ idToken: result.token }),
@@ -64,7 +65,7 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
   }
 
   async function signOut() {
-    await fetch("/api/session", { method: "DELETE" }).catch(() => {});
+    await fetch(`${BASE_PATH}/api/session`, { method: "DELETE" }).catch(() => {});
     await firebaseSignOut(auth);
   }
 

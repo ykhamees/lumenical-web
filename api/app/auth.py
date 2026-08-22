@@ -15,14 +15,19 @@ class AdminUser:
     role: str
 
 
-def _extract_bearer_token(authorization: str | None) -> str:
-    if not authorization or not authorization.startswith("Bearer "):
+def _extract_bearer_token(value: str | None) -> str:
+    if not value:
         raise HTTPException(status_code=401, detail="Missing bearer token")
-    return authorization.removeprefix("Bearer ").strip()
+    return value.removeprefix("Bearer ").strip()
 
 
 async def require_admin_user(
-    authorization: str | None = Header(default=None),
+    # Not `Authorization` — /api/admin/** is only ever called by the admin
+    # app's own server-to-server proxy (admin/src/app/api/[...path]/route.ts),
+    # which needs `Authorization` itself for Cloud Run's own IAM invoker
+    # check on this service and so forwards the browser's Firebase ID token
+    # in this header instead.
+    x_firebase_id_token: str | None = Header(default=None),
 ) -> AdminUser:
     """Verifies the Firebase ID token on every request — the client's own
     claim of a role is never trusted, only what's actually on the verified
@@ -30,7 +35,7 @@ async def require_admin_user(
     firestore.rules' `isEditorOrAdmin()` helper exactly.
     """
     get_app()
-    token = _extract_bearer_token(authorization)
+    token = _extract_bearer_token(x_firebase_id_token)
 
     try:
         decoded = firebase_auth.verify_id_token(token)

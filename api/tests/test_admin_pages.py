@@ -15,7 +15,7 @@ def test_requires_auth(client: TestClient) -> None:
 
 def test_create_get_and_list_page(client: TestClient, admin_token: str) -> None:
     slug = _slug()
-    headers = {"Authorization": f"Bearer {admin_token}"}
+    headers = {"X-Firebase-Id-Token": f"Bearer {admin_token}"}
 
     resp = client.post(
         "/api/admin/pages",
@@ -39,7 +39,7 @@ def test_create_get_and_list_page(client: TestClient, admin_token: str) -> None:
 
 def test_create_rejects_duplicate_slug(client: TestClient, admin_token: str) -> None:
     slug = _slug()
-    headers = {"Authorization": f"Bearer {admin_token}"}
+    headers = {"X-Firebase-Id-Token": f"Bearer {admin_token}"}
     payload = {"slug": slug, "title": "First", "body": ""}
 
     resp = client.post("/api/admin/pages", json=payload, headers=headers)
@@ -53,14 +53,14 @@ def test_create_rejects_invalid_slug(client: TestClient, admin_token: str) -> No
     resp = client.post(
         "/api/admin/pages",
         json={"slug": "Not A Valid Slug!", "title": "x", "body": ""},
-        headers={"Authorization": f"Bearer {admin_token}"},
+        headers={"X-Firebase-Id-Token": f"Bearer {admin_token}"},
     )
     assert resp.status_code == 422
 
 
 def test_body_html_is_sanitized(client: TestClient, admin_token: str) -> None:
     slug = _slug()
-    headers = {"Authorization": f"Bearer {admin_token}"}
+    headers = {"X-Firebase-Id-Token": f"Bearer {admin_token}"}
     resp = client.post(
         "/api/admin/pages",
         json={
@@ -77,7 +77,7 @@ def test_body_html_is_sanitized(client: TestClient, admin_token: str) -> None:
 
 def test_tags_round_trip(client: TestClient, admin_token: str) -> None:
     slug = _slug()
-    headers = {"Authorization": f"Bearer {admin_token}"}
+    headers = {"X-Firebase-Id-Token": f"Bearer {admin_token}"}
 
     resp = client.post(
         "/api/admin/pages",
@@ -103,14 +103,14 @@ def test_create_defaults_to_no_tags(client: TestClient, admin_token: str) -> Non
     resp = client.post(
         "/api/admin/pages",
         json={"slug": slug, "title": "T", "body": ""},
-        headers={"Authorization": f"Bearer {admin_token}"},
+        headers={"X-Firebase-Id-Token": f"Bearer {admin_token}"},
     )
     assert resp.json()["tags"] == []
 
 
 def test_update_page(client: TestClient, admin_token: str) -> None:
     slug = _slug()
-    headers = {"Authorization": f"Bearer {admin_token}"}
+    headers = {"X-Firebase-Id-Token": f"Bearer {admin_token}"}
     client.post(
         "/api/admin/pages", json={"slug": slug, "title": "Old", "body": ""}, headers=headers
     )
@@ -130,14 +130,14 @@ def test_update_404_for_unknown_slug(client: TestClient, admin_token: str) -> No
     resp = client.patch(
         "/api/admin/pages/does-not-exist",
         json={"title": "x", "body": ""},
-        headers={"Authorization": f"Bearer {admin_token}"},
+        headers={"X-Firebase-Id-Token": f"Bearer {admin_token}"},
     )
     assert resp.status_code == 404
 
 
 def test_publish_and_unpublish_writes_audit_log(client: TestClient, admin_token: str) -> None:
     slug = _slug()
-    headers = {"Authorization": f"Bearer {admin_token}"}
+    headers = {"X-Firebase-Id-Token": f"Bearer {admin_token}"}
     client.post("/api/admin/pages", json={"slug": slug, "title": "T", "body": ""}, headers=headers)
 
     resp = client.post(f"/api/admin/pages/{slug}/publish", headers=headers)
@@ -163,7 +163,7 @@ def test_publish_and_unpublish_writes_audit_log(client: TestClient, admin_token:
 
 def test_editor_can_create_and_publish_page(client: TestClient, editor_token: str) -> None:
     slug = _slug()
-    headers = {"Authorization": f"Bearer {editor_token}"}
+    headers = {"X-Firebase-Id-Token": f"Bearer {editor_token}"}
 
     resp = client.post(
         "/api/admin/pages", json={"slug": slug, "title": "T", "body": ""}, headers=headers
@@ -182,19 +182,19 @@ def test_delete_requires_admin_role_not_editor(
     client.post(
         "/api/admin/pages",
         json={"slug": slug, "title": "T", "body": ""},
-        headers={"Authorization": f"Bearer {admin_token}"},
+        headers={"X-Firebase-Id-Token": f"Bearer {admin_token}"},
     )
 
     resp = client.delete(
         f"/api/admin/pages/{slug}",
-        headers={"Authorization": f"Bearer {editor_token}"},
+        headers={"X-Firebase-Id-Token": f"Bearer {editor_token}"},
     )
     assert resp.status_code == 403
 
 
 def test_delete_page(client: TestClient, admin_token: str) -> None:
     slug = _slug()
-    headers = {"Authorization": f"Bearer {admin_token}"}
+    headers = {"X-Firebase-Id-Token": f"Bearer {admin_token}"}
     client.post("/api/admin/pages", json={"slug": slug, "title": "T", "body": ""}, headers=headers)
 
     resp = client.delete(f"/api/admin/pages/{slug}", headers=headers)
@@ -215,6 +215,6 @@ def test_delete_page(client: TestClient, admin_token: str) -> None:
 def test_delete_404_for_unknown_slug(client: TestClient, admin_token: str) -> None:
     resp = client.delete(
         "/api/admin/pages/does-not-exist",
-        headers={"Authorization": f"Bearer {admin_token}"},
+        headers={"X-Firebase-Id-Token": f"Bearer {admin_token}"},
     )
     assert resp.status_code == 404

@@ -9,11 +9,11 @@ export async function listDemos(options: {
   const params = new URLSearchParams({ limit: String(options.limit) });
   if (options.status !== "all") params.set("status", options.status);
   if (options.cursor) params.set("cursor", options.cursor);
-  return adminFetchJson<DemoListResponse>(`/api/admin/demos?${params}`);
+  return adminFetchJson<DemoListResponse>(`/api/demos?${params}`);
 }
 
 export async function getDemo(id: string): Promise<Demo> {
-  return adminFetchJson<Demo>(`/api/admin/demos/${id}`);
+  return adminFetchJson<Demo>(`/api/demos/${id}`);
 }
 
 export type DemoInput = {
@@ -28,27 +28,27 @@ export type DemoInput = {
 };
 
 export async function createDemo(input: DemoInput): Promise<Demo> {
-  return adminFetchJson<Demo>("/api/admin/demos", {
+  return adminFetchJson<Demo>("/api/demos", {
     method: "POST",
     body: JSON.stringify(input),
   });
 }
 
 export async function updateDemo(id: string, input: DemoInput): Promise<Demo> {
-  return adminFetchJson<Demo>(`/api/admin/demos/${id}`, {
+  return adminFetchJson<Demo>(`/api/demos/${id}`, {
     method: "PATCH",
     body: JSON.stringify(input),
   });
 }
 
 export async function publishDemo(id: string): Promise<Demo> {
-  return adminFetchJson<Demo>(`/api/admin/demos/${id}/publish`, { method: "POST" });
+  return adminFetchJson<Demo>(`/api/demos/${id}/publish`, { method: "POST" });
 }
 
 export async function unpublishDemo(id: string): Promise<Demo> {
-  return adminFetchJson<Demo>(`/api/admin/demos/${id}/unpublish`, { method: "POST" });
+  return adminFetchJson<Demo>(`/api/demos/${id}/unpublish`, { method: "POST" });
 }
 
 export async function deleteDemo(id: string): Promise<void> {
-  await adminFetch(`/api/admin/demos/${id}`, { method: "DELETE" });
+  await adminFetch(`/api/demos/${id}`, { method: "DELETE" });
 }

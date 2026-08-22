@@ -49,7 +49,7 @@ Both forms `POST` same-origin JSON to the real API: `NewsletterForm.tsx` → `/a
 
 `hello@lumenical.com` (rendered via `src/components/ObfuscatedEmail.tsx` — hidden from the static HTML until a real click) is published on `/contact/`, `/careers/`, and the footer as an alternative contact channel.
 
-**The API itself** (`api/`, FastAPI + Firestore, Cloudflare Turnstile verification, best-effort Resend email) is fully built and tested against the local Firestore emulator — see `api/README.md`. **It is not yet deployed to any live GCP infrastructure** — see `docs/infrastructure.md` for exactly what Phase 3.2 still needs to provision. Until it's deployed, form submissions in production either simulate (if `NEXT_PUBLIC_SIMULATE_FORMS` is set) or fail against a route that doesn't resolve yet.
+**The API itself** (`api/`, FastAPI + Firestore, Cloudflare Turnstile verification, best-effort Resend email) is fully built and tested against the local Firestore emulator — see `api/README.md`. **It's deployed to Cloud Run** (`docs/infrastructure.md`) as of 2026-08-22, but Turnstile/Resend aren't configured yet (no accounts exist), and `firebase.json`'s `/api/**` rewrite still needs a Hosting deploy to actually take effect in production — until then, form submissions in production either simulate (if `NEXT_PUBLIC_SIMULATE_FORMS` is set) or fail against a route that doesn't resolve yet.
 
 ## CMS-driven pages
 
@@ -71,7 +71,7 @@ Pull requests trigger `.github/workflows/preview.yml`, which runs the same lint/
 
 A separate `.github/workflows/deploy-api.yml`, triggered only on `api/**` changes, lints/type-checks/tests the Python API (against a real Firestore emulator it starts itself — no GCP access needed for this part) and then builds/pushes/deploys its container to Cloud Run. That deploy step needs the WIF binding documented in `docs/infrastructure.md`, which doesn't exist yet — the test job works today regardless.
 
-Similarly, `.github/workflows/deploy-admin.yml`, triggered only on `admin/**` changes, lints/type-checks/builds the admin console and deploys it to its own Cloud Run service at `web-admin.lumenical.com`. Its deploy step needs the WIF binding in `docs/infrastructure-admin.md`, also not provisioned yet.
+Similarly, `.github/workflows/deploy-admin.yml`, triggered only on `admin/**` changes, lints/type-checks/builds the admin console and deploys it to its own Cloud Run service, served at `lumenical.com/website/**` via a `firebase.json` Hosting rewrite (not its own subdomain). See `docs/infrastructure-admin.md`.
 
 ## Adding a page
 

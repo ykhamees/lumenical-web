@@ -23,7 +23,7 @@ export async function listMedia(options: {
 }): Promise<MediaListResponse> {
   const params = new URLSearchParams({ limit: String(options.limit) });
   if (options.cursor) params.set("cursor", options.cursor);
-  return adminFetchJson<MediaListResponse>(`/api/admin/media?${params}`);
+  return adminFetchJson<MediaListResponse>(`/api/media?${params}`);
 }
 
 async function getUploadUrl(
@@ -31,7 +31,7 @@ async function getUploadUrl(
   contentType: string,
   isPublic: boolean
 ): Promise<{ uploadUrl: string; storagePath: string }> {
-  return adminFetchJson<{ uploadUrl: string; storagePath: string }>("/api/admin/media/upload-url", {
+  return adminFetchJson<{ uploadUrl: string; storagePath: string }>("/api/media/upload-url", {
     method: "POST",
     body: JSON.stringify({ filename, contentType, public: isPublic }),
   });
@@ -55,7 +55,7 @@ export async function uploadFile(file: File, isPublic: boolean): Promise<MediaAs
     throw new Error("Upload to storage failed");
   }
 
-  return adminFetchJson<MediaAsset>("/api/admin/media", {
+  return adminFetchJson<MediaAsset>("/api/media", {
     method: "POST",
     body: JSON.stringify({
       storagePath,
@@ -69,5 +69,5 @@ export async function uploadFile(file: File, isPublic: boolean): Promise<MediaAs
 
 export async function deleteMedia(id: string, options?: { force?: boolean }): Promise<void> {
   const query = options?.force ? "?force=true" : "";
-  await adminFetch(`/api/admin/media/${id}${query}`, { method: "DELETE" });
+  await adminFetch(`/api/media/${id}${query}`, { method: "DELETE" });
 }

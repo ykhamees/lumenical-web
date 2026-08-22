@@ -8,7 +8,12 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: "*",
       allow: "/",
-      disallow: "/admin/",
+      // The admin console (admin/) is a separate app served at
+      // lumenical.com/website/** via a firebase.json Hosting rewrite — it
+      // has its own robots.ts too, but that's at /website/robots.txt, a
+      // non-standard location crawlers won't check, so it's disallowed
+      // from here, the real site root, instead.
+      disallow: "/website/",
     },
     sitemap: `https://${site.domain}/sitemap.xml`,
   };

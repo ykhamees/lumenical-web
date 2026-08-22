@@ -30,7 +30,7 @@ def test_list_subscribers(client: TestClient, admin_token: str) -> None:
 
     resp = client.get(
         "/api/admin/newsletter",
-        headers={"Authorization": f"Bearer {admin_token}"},
+        headers={"X-Firebase-Id-Token": f"Bearer {admin_token}"},
     )
     assert resp.status_code == 200
     emails = {item["email"] for item in resp.json()["items"]}
@@ -44,7 +44,7 @@ def test_list_subscribers_filters_by_status(client: TestClient, admin_token: str
     resp = client.get(
         "/api/admin/newsletter",
         params={"status": "unsubscribed"},
-        headers={"Authorization": f"Bearer {admin_token}"},
+        headers={"X-Firebase-Id-Token": f"Bearer {admin_token}"},
     )
     assert resp.status_code == 200
     body = resp.json()
@@ -57,7 +57,7 @@ def test_unsubscribe_writes_audit_log(client: TestClient, admin_token: str) -> N
 
     resp = client.post(
         f"/api/admin/newsletter/{doc_id}/unsubscribe",
-        headers={"Authorization": f"Bearer {admin_token}"},
+        headers={"X-Firebase-Id-Token": f"Bearer {admin_token}"},
     )
     assert resp.status_code == 200
     assert resp.json()["status"] == "unsubscribed"
@@ -79,7 +79,7 @@ def test_unsubscribe_writes_audit_log(client: TestClient, admin_token: str) -> N
 def test_unsubscribe_404_for_unknown_id(client: TestClient, admin_token: str) -> None:
     resp = client.post(
         "/api/admin/newsletter/does-not-exist/unsubscribe",
-        headers={"Authorization": f"Bearer {admin_token}"},
+        headers={"X-Firebase-Id-Token": f"Bearer {admin_token}"},
     )
     assert resp.status_code == 404
 
@@ -89,7 +89,7 @@ def test_export_returns_csv(client: TestClient, admin_token: str) -> None:
 
     resp = client.get(
         "/api/admin/newsletter/export",
-        headers={"Authorization": f"Bearer {admin_token}"},
+        headers={"X-Firebase-Id-Token": f"Bearer {admin_token}"},
     )
     assert resp.status_code == 200
     assert resp.headers["content-type"].startswith("text/csv")

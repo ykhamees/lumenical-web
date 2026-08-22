@@ -5,6 +5,16 @@ RUN npm ci
 
 FROM node:20-slim AS builder
 WORKDIR /app
+# NEXT_PUBLIC_* vars are inlined into the client bundle at build time, not
+# read at container runtime — --set-env-vars on the deployed Cloud Run
+# service has no effect on these; they must be passed as --build-arg to
+# `docker build` instead.
+ARG NEXT_PUBLIC_FIREBASE_API_KEY
+ARG NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
+ARG NEXT_PUBLIC_FIREBASE_PROJECT_ID
+ENV NEXT_PUBLIC_FIREBASE_API_KEY=$NEXT_PUBLIC_FIREBASE_API_KEY
+ENV NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=$NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
+ENV NEXT_PUBLIC_FIREBASE_PROJECT_ID=$NEXT_PUBLIC_FIREBASE_PROJECT_ID
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN npm run build

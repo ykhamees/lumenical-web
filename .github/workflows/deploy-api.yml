@@ -72,18 +72,18 @@ jobs:
         uses: google-github-actions/setup-gcloud@v2
 
       - name: Configure Docker for Artifact Registry
-        run: gcloud auth configure-docker us-central1-docker.pkg.dev --quiet
+        run: gcloud auth configure-docker me-central1-docker.pkg.dev --quiet
 
       - name: Build and push image
         working-directory: api
         run: |
-          docker build -t us-central1-docker.pkg.dev/lumenical-ai/lumenical-api/api:${{ github.sha }} .
-          docker push us-central1-docker.pkg.dev/lumenical-ai/lumenical-api/api:${{ github.sha }}
+          docker build -t me-central1-docker.pkg.dev/lumenical-ai/lumenical-api/api:${{ github.sha }} .
+          docker push me-central1-docker.pkg.dev/lumenical-ai/lumenical-api/api:${{ github.sha }}
 
       - name: Deploy to Cloud Run
         run: |
           gcloud run deploy lumenical-api \
-            --image=us-central1-docker.pkg.dev/lumenical-ai/lumenical-api/api:${{ github.sha }} \
-            --region=us-central1 \
+            --image=me-central1-docker.pkg.dev/lumenical-ai/lumenical-api/api:${{ github.sha }} \
+            --region=me-central1 \
             --project=lumenical-ai \
             --quiet

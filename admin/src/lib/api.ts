@@ -1,3 +1,4 @@
+import { BASE_PATH } from "./base-path";
 import { auth } from "./firebase-client";
 
 export class AdminApiError extends Error {
@@ -26,7 +27,10 @@ export async function adminFetch(path: string, init?: RequestInit): Promise<Resp
   }
 
   const token = await user.getIdToken();
-  const res = await fetch(path, {
+  // basePath (next.config.mjs) prefixes page routing/next-link
+  // automatically, but not plain fetch() calls — add it explicitly here,
+  // once, so every caller keeps passing plain /api/... paths.
+  const res = await fetch(`${BASE_PATH}${path}`, {
     ...init,
     headers: {
       ...(init?.headers ?? {}),

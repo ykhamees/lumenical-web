@@ -9,11 +9,11 @@ export async function listPages(options: {
   const params = new URLSearchParams({ limit: String(options.limit) });
   if (options.status !== "all") params.set("status", options.status);
   if (options.cursor) params.set("cursor", options.cursor);
-  return adminFetchJson<PageListResponse>(`/api/admin/pages?${params}`);
+  return adminFetchJson<PageListResponse>(`/api/pages?${params}`);
 }
 
 export async function getPage(slug: string): Promise<Page> {
-  return adminFetchJson<Page>(`/api/admin/pages/${slug}`);
+  return adminFetchJson<Page>(`/api/pages/${slug}`);
 }
 
 export type PageInput = {
@@ -26,27 +26,27 @@ export type PageInput = {
 };
 
 export async function createPage(slug: string, input: PageInput): Promise<Page> {
-  return adminFetchJson<Page>("/api/admin/pages", {
+  return adminFetchJson<Page>("/api/pages", {
     method: "POST",
     body: JSON.stringify({ slug, ...input }),
   });
 }
 
 export async function updatePage(slug: string, input: PageInput): Promise<Page> {
-  return adminFetchJson<Page>(`/api/admin/pages/${slug}`, {
+  return adminFetchJson<Page>(`/api/pages/${slug}`, {
     method: "PATCH",
     body: JSON.stringify(input),
   });
 }
 
 export async function publishPage(slug: string): Promise<Page> {
-  return adminFetchJson<Page>(`/api/admin/pages/${slug}/publish`, { method: "POST" });
+  return adminFetchJson<Page>(`/api/pages/${slug}/publish`, { method: "POST" });
 }
 
 export async function unpublishPage(slug: string): Promise<Page> {
-  return adminFetchJson<Page>(`/api/admin/pages/${slug}/unpublish`, { method: "POST" });
+  return adminFetchJson<Page>(`/api/pages/${slug}/unpublish`, { method: "POST" });
 }
 
 export async function deletePage(slug: string): Promise<void> {
-  await adminFetch(`/api/admin/pages/${slug}`, { method: "DELETE" });
+  await adminFetch(`/api/pages/${slug}`, { method: "DELETE" });
 }

@@ -65,18 +65,36 @@ jobs:
         uses: google-github-actions/setup-gcloud@v2
 
       - name: Configure Docker for Artifact Registry
-        run: gcloud auth configure-docker us-central1-docker.pkg.dev --quiet
+        run: gcloud auth configure-docker me-central1-docker.pkg.dev --quiet
 
       - name: Build and push image
         working-directory: admin
+        env:
+          # NEXT_PUBLIC_* vars are inlined at build time (see Dockerfile) —
+          # must be passed as --build-arg, not just --set-env-vars on the
+          # deployed Cloud Run service.
+          NEXT_PUBLIC_FIREBASE_API_KEY: ${{ vars.FIREBASE_API_KEY }}
+          NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: ${{ vars.FIREBASE_AUTH_DOMAIN }}
+          NEXT_PUBLIC_FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
         run: |
-          docker build -t us-central1-docker.pkg.dev/lumenical-ai/lumenical-admin/admin:${{ github.sha }} .
-          docker push us-central1-docker.pkg.dev/lumenical-ai/lumenical-admin/admin:${{ github.sha }}
+          docker build \
+            --build-arg NEXT_PUBLIC_FIREBASE_API_KEY \
+            --build-arg NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN \
+            --build-arg NEXT_PUBLIC_FIREBASE_PROJECT_ID \
+            -t me-central1-docker.pkg.dev/lumenical-ai/lumenical-admin/admin:${{ github.sha }} .
+          docker push me-central1-docker.pkg.dev/lumenical-ai/lumenical-admin/admin:${{ github.sha }}
+
+      - name: Get API service URL
+        id: api-url
+        run: |
+          url=$(gcloud run services describe lumenical-api --region=me-central1 --project=lumenical-ai --format='value(status.url)')
+          echo "url=$url" >> "$GITHUB_OUTPUT"
 
       - name: Deploy to Cloud Run
         run: |
           gcloud run deploy lumenical-admin \
-            --image=us-central1-docker.pkg.dev/lumenical-ai/lumenical-admin/admin:${{ github.sha }} \
-            --region=us-central1 \
+            --image=me-central1-docker.pkg.dev/lumenical-ai/lumenical-admin/admin:${{ github.sha }} \
+            --region=me-central1 \
             --project=lumenical-ai \
+            --set-env-vars=ADMIN_API_BASE_URL=${{ steps.api-url.outputs.url }} \
             --quiet

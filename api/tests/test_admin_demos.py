@@ -15,7 +15,7 @@ def test_requires_auth(client: TestClient) -> None:
 
 def test_create_get_and_list_demo(client: TestClient, admin_token: str) -> None:
     slug = _slug()
-    headers = {"Authorization": f"Bearer {admin_token}"}
+    headers = {"X-Firebase-Id-Token": f"Bearer {admin_token}"}
 
     resp = client.post(
         "/api/admin/demos",
@@ -45,7 +45,7 @@ def test_create_get_and_list_demo(client: TestClient, admin_token: str) -> None:
 
 def test_create_rejects_duplicate_slug(client: TestClient, admin_token: str) -> None:
     slug = _slug()
-    headers = {"Authorization": f"Bearer {admin_token}"}
+    headers = {"X-Firebase-Id-Token": f"Bearer {admin_token}"}
     payload = {"slug": slug, "title": "First", "kind": "product", "body": ""}
 
     resp = client.post("/api/admin/demos", json=payload, headers=headers)
@@ -56,7 +56,7 @@ def test_create_rejects_duplicate_slug(client: TestClient, admin_token: str) -> 
 
 
 def test_body_html_is_sanitized(client: TestClient, admin_token: str) -> None:
-    headers = {"Authorization": f"Bearer {admin_token}"}
+    headers = {"X-Firebase-Id-Token": f"Bearer {admin_token}"}
     resp = client.post(
         "/api/admin/demos",
         json={
@@ -73,7 +73,7 @@ def test_body_html_is_sanitized(client: TestClient, admin_token: str) -> None:
 
 
 def test_update_demo(client: TestClient, admin_token: str) -> None:
-    headers = {"Authorization": f"Bearer {admin_token}"}
+    headers = {"X-Firebase-Id-Token": f"Bearer {admin_token}"}
     resp = client.post(
         "/api/admin/demos",
         json={"slug": _slug(), "title": "Old", "kind": "product", "body": ""},
@@ -105,7 +105,7 @@ def test_update_demo(client: TestClient, admin_token: str) -> None:
 def test_update_rejects_slug_collision_with_another_demo(
     client: TestClient, admin_token: str
 ) -> None:
-    headers = {"Authorization": f"Bearer {admin_token}"}
+    headers = {"X-Firebase-Id-Token": f"Bearer {admin_token}"}
     slug_a = _slug()
     slug_b = _slug()
     client.post(
@@ -129,7 +129,7 @@ def test_update_rejects_slug_collision_with_another_demo(
 
 
 def test_update_allows_keeping_same_slug(client: TestClient, admin_token: str) -> None:
-    headers = {"Authorization": f"Bearer {admin_token}"}
+    headers = {"X-Firebase-Id-Token": f"Bearer {admin_token}"}
     slug = _slug()
     resp = client.post(
         "/api/admin/demos",
@@ -151,13 +151,13 @@ def test_update_404_for_unknown_id(client: TestClient, admin_token: str) -> None
     resp = client.patch(
         "/api/admin/demos/does-not-exist",
         json={"slug": _slug(), "title": "x", "kind": "product", "body": ""},
-        headers={"Authorization": f"Bearer {admin_token}"},
+        headers={"X-Firebase-Id-Token": f"Bearer {admin_token}"},
     )
     assert resp.status_code == 404
 
 
 def test_publish_and_unpublish_writes_audit_log(client: TestClient, admin_token: str) -> None:
-    headers = {"Authorization": f"Bearer {admin_token}"}
+    headers = {"X-Firebase-Id-Token": f"Bearer {admin_token}"}
     resp = client.post(
         "/api/admin/demos",
         json={"slug": _slug(), "title": "T", "kind": "product", "body": ""},
@@ -192,19 +192,19 @@ def test_delete_requires_admin_role_not_editor(
     resp = client.post(
         "/api/admin/demos",
         json={"slug": _slug(), "title": "T", "kind": "product", "body": ""},
-        headers={"Authorization": f"Bearer {admin_token}"},
+        headers={"X-Firebase-Id-Token": f"Bearer {admin_token}"},
     )
     demo_id = resp.json()["id"]
 
     resp = client.delete(
         f"/api/admin/demos/{demo_id}",
-        headers={"Authorization": f"Bearer {editor_token}"},
+        headers={"X-Firebase-Id-Token": f"Bearer {editor_token}"},
     )
     assert resp.status_code == 403
 
 
 def test_delete_demo(client: TestClient, admin_token: str) -> None:
-    headers = {"Authorization": f"Bearer {admin_token}"}
+    headers = {"X-Firebase-Id-Token": f"Bearer {admin_token}"}
     resp = client.post(
         "/api/admin/demos",
         json={"slug": _slug(), "title": "T", "kind": "product", "body": ""},

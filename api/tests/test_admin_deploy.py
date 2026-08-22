@@ -8,7 +8,7 @@ def test_requires_auth(client: TestClient) -> None:
 
 def test_returns_not_configured_by_default(client: TestClient, admin_token: str) -> None:
     resp = client.get(
-        "/api/admin/deploy-status", headers={"Authorization": f"Bearer {admin_token}"}
+        "/api/admin/deploy-status", headers={"X-Firebase-Id-Token": f"Bearer {admin_token}"}
     )
     assert resp.status_code == 200
     body = resp.json()

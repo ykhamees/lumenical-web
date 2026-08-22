@@ -42,7 +42,14 @@
         "source": "/api/**",
         "run": {
           "serviceId": "lumenical-api",
-          "region": "us-central1"
+          "region": "me-central1"
+        }
+      },
+      {
+        "source": "/website/**",
+        "run": {
+          "serviceId": "lumenical-admin",
+          "region": "me-central1"
         }
       }
     ]

@@ -47,13 +47,13 @@ def test_audit_log_requires_auth(client: TestClient) -> None:
 
 def test_audit_log_requires_admin_not_editor(client: TestClient, editor_token: str) -> None:
     resp = client.get(
-        "/api/admin/audit-log", headers={"Authorization": f"Bearer {editor_token}"}
+        "/api/admin/audit-log", headers={"X-Firebase-Id-Token": f"Bearer {editor_token}"}
     )
     assert resp.status_code == 403
 
 
 def test_audit_log_lists_and_filters(client: TestClient, admin_token: str) -> None:
-    headers = {"Authorization": f"Bearer {admin_token}"}
+    headers = {"X-Firebase-Id-Token": f"Bearer {admin_token}"}
     _seed_audit_entry(targetCollection="leads", action="lead.status_changed")
     _seed_audit_entry(targetCollection="pages", action="page.published")
 
@@ -71,7 +71,7 @@ def test_audit_log_lists_and_filters(client: TestClient, admin_token: str) -> No
 
 
 def test_audit_log_paginates(client: TestClient, admin_token: str) -> None:
-    headers = {"Authorization": f"Bearer {admin_token}"}
+    headers = {"X-Firebase-Id-Token": f"Bearer {admin_token}"}
     for _ in range(3):
         _seed_audit_entry()
 
@@ -101,13 +101,13 @@ def test_outbound_emails_requires_admin_not_editor(
     client: TestClient, editor_token: str
 ) -> None:
     resp = client.get(
-        "/api/admin/outbound-emails", headers={"Authorization": f"Bearer {editor_token}"}
+        "/api/admin/outbound-emails", headers={"X-Firebase-Id-Token": f"Bearer {editor_token}"}
     )
     assert resp.status_code == 403
 
 
 def test_outbound_emails_lists_and_filters(client: TestClient, admin_token: str) -> None:
-    headers = {"Authorization": f"Bearer {admin_token}"}
+    headers = {"X-Firebase-Id-Token": f"Bearer {admin_token}"}
     _seed_outbound_email(status="sent")
     _seed_outbound_email(status="failed", error="Provider outage")
 

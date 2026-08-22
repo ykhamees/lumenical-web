@@ -108,7 +108,7 @@ def test_no_role_is_rejected(
     editor_allowed: set[str],
 ) -> None:
     resp = client.request(
-        method, path, json=body, headers={"Authorization": f"Bearer {no_role_token}"}
+        method, path, json=body, headers={"X-Firebase-Id-Token": f"Bearer {no_role_token}"}
     )
     assert resp.status_code == 403
 
@@ -123,7 +123,7 @@ def test_editor_authorization(
     editor_allowed: set[str],
 ) -> None:
     resp = client.request(
-        method, path, json=body, headers={"Authorization": f"Bearer {editor_token}"}
+        method, path, json=body, headers={"X-Firebase-Id-Token": f"Bearer {editor_token}"}
     )
     if "editor" in editor_allowed:
         assert resp.status_code not in (401, 403), resp.text
@@ -141,6 +141,6 @@ def test_admin_authorization(
     editor_allowed: set[str],
 ) -> None:
     resp = client.request(
-        method, path, json=body, headers={"Authorization": f"Bearer {admin_token}"}
+        method, path, json=body, headers={"X-Firebase-Id-Token": f"Bearer {admin_token}"}
     )
     assert resp.status_code not in (401, 403), resp.text

@@ -11,7 +11,13 @@ export async function proxy(request: NextRequest) {
   const cookie = request.cookies.get(SESSION_COOKIE_NAME)?.value;
 
   if (!cookie || !(await verifySessionCookie(cookie))) {
-    return NextResponse.redirect(new URL("/", request.url));
+    // Cloning nextUrl (not building a fresh URL from request.url) keeps
+    // this basePath-aware — this app is served under /website, not the
+    // domain root (next.config.mjs), and NextResponse.redirect only
+    // re-adds that prefix when given a NextURL derived this way.
+    const loginUrl = request.nextUrl.clone();
+    loginUrl.pathname = "/";
+    return NextResponse.redirect(loginUrl);
   }
 
   return NextResponse.next();

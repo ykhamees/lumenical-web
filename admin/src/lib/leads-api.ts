@@ -9,22 +9,22 @@ export async function listLeads(options: {
   const params = new URLSearchParams({ limit: String(options.limit) });
   if (options.status !== "all") params.set("status", options.status);
   if (options.cursor) params.set("cursor", options.cursor);
-  return adminFetchJson<LeadListResponse>(`/api/admin/leads?${params}`);
+  return adminFetchJson<LeadListResponse>(`/api/leads?${params}`);
 }
 
 export async function getLead(id: string): Promise<Lead> {
-  return adminFetchJson<Lead>(`/api/admin/leads/${id}`);
+  return adminFetchJson<Lead>(`/api/leads/${id}`);
 }
 
 export async function updateLeadStatus(id: string, status: LeadStatus): Promise<Lead> {
-  return adminFetchJson<Lead>(`/api/admin/leads/${id}`, {
+  return adminFetchJson<Lead>(`/api/leads/${id}`, {
     method: "PATCH",
     body: JSON.stringify({ status }),
   });
 }
 
 export async function addLeadNote(id: string, text: string): Promise<Lead> {
-  return adminFetchJson<Lead>(`/api/admin/leads/${id}/notes`, {
+  return adminFetchJson<Lead>(`/api/leads/${id}/notes`, {
     method: "POST",
     body: JSON.stringify({ text }),
   });

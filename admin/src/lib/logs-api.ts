@@ -27,7 +27,7 @@ export async function listAuditLog(options: {
     params.set("targetCollection", options.targetCollection);
   }
   if (options.cursor) params.set("cursor", options.cursor);
-  return adminFetchJson<AuditLogListResponse>(`/api/admin/audit-log?${params}`);
+  return adminFetchJson<AuditLogListResponse>(`/api/audit-log?${params}`);
 }
 
 export type OutboundEmailEntry = {
@@ -54,5 +54,5 @@ export async function listOutboundEmails(options: {
   const params = new URLSearchParams({ limit: String(options.limit) });
   if (options.status !== "all") params.set("status", options.status);
   if (options.cursor) params.set("cursor", options.cursor);
-  return adminFetchJson<OutboundEmailListResponse>(`/api/admin/outbound-emails?${params}`);
+  return adminFetchJson<OutboundEmailListResponse>(`/api/outbound-emails?${params}`);
 }

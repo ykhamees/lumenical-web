@@ -9,5 +9,5 @@ export type DeployStatus = {
 };
 
 export async function getDeployStatus(): Promise<DeployStatus> {
-  return adminFetchJson<DeployStatus>("/api/admin/deploy-status");
+  return adminFetchJson<DeployStatus>("/api/deploy-status");
 }

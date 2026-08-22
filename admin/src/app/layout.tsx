@@ -3,6 +3,7 @@ import { Geist, Instrument_Serif, JetBrains_Mono } from "next/font/google";
 import Script from "next/script";
 import { AdminShell } from "@/components/AdminShell";
 import { AdminAuthProvider } from "@/lib/auth";
+import { BASE_PATH } from "@/lib/base-path";
 import "./globals.css";
 
 const THEME_INIT_SCRIPT = `(function(){try{var t=localStorage.getItem('theme');var d=t==='dark'||(!t&&window.matchMedia('(prefers-color-scheme: dark)').matches);document.documentElement.classList.toggle('dark',d);}catch(e){}})();`;
@@ -34,7 +35,9 @@ export const metadata: Metadata = {
   // Every route in this app is admin-only — noindex applies at the root
   // rather than per page, unlike the marketing site's routes.ts registry.
   robots: { index: false, follow: false },
-  icons: { icon: "/favicon.svg" },
+  // metadata.icons isn't basePath-aware (same as next/image's src) — must
+  // be prefixed manually.
+  icons: { icon: `${BASE_PATH}/favicon.svg` },
 };
 
 export const viewport: Viewport = {

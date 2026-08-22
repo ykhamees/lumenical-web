@@ -55,7 +55,7 @@ def test_upload_url_is_well_formed(client: TestClient, admin_token: str) -> None
     resp = client.post(
         "/api/admin/media/upload-url",
         json={"filename": "poster.png", "contentType": "image/png", "public": True},
-        headers={"Authorization": f"Bearer {admin_token}"},
+        headers={"X-Firebase-Id-Token": f"Bearer {admin_token}"},
     )
     assert resp.status_code == 200
     body = resp.json()
@@ -72,7 +72,7 @@ def test_upload_url_rejects_unsupported_content_type(
     resp = client.post(
         "/api/admin/media/upload-url",
         json={"filename": "malware.exe", "contentType": "application/x-msdownload"},
-        headers={"Authorization": f"Bearer {admin_token}"},
+        headers={"X-Firebase-Id-Token": f"Bearer {admin_token}"},
     )
     assert resp.status_code == 422
 
@@ -89,13 +89,13 @@ def test_confirm_rejects_upload_that_never_happened(
             "size": 10,
             "public": True,
         },
-        headers={"Authorization": f"Bearer {admin_token}"},
+        headers={"X-Firebase-Id-Token": f"Bearer {admin_token}"},
     )
     assert resp.status_code == 422
 
 
 def test_full_upload_flow_and_list(client: TestClient, admin_token: str) -> None:
-    headers = {"Authorization": f"Bearer {admin_token}"}
+    headers = {"X-Firebase-Id-Token": f"Bearer {admin_token}"}
     media = _upload_and_confirm(client, headers, public=True)
 
     assert media["filename"] == "poster.png"
@@ -109,14 +109,14 @@ def test_full_upload_flow_and_list(client: TestClient, admin_token: str) -> None
 
 
 def test_private_upload_has_no_public_url(client: TestClient, admin_token: str) -> None:
-    headers = {"Authorization": f"Bearer {admin_token}"}
+    headers = {"X-Firebase-Id-Token": f"Bearer {admin_token}"}
     media = _upload_and_confirm(client, headers, public=False)
     assert media["public"] is False
     assert media["url"] is None
 
 
 def test_delete_unreferenced_asset(client: TestClient, admin_token: str) -> None:
-    headers = {"Authorization": f"Bearer {admin_token}"}
+    headers = {"X-Firebase-Id-Token": f"Bearer {admin_token}"}
     media = _upload_and_confirm(client, headers, public=True)
 
     resp = client.delete(f"/api/admin/media/{media['id']}", headers=headers)
@@ -137,7 +137,7 @@ def test_delete_unreferenced_asset(client: TestClient, admin_token: str) -> None
 
 
 def test_delete_referenced_asset_warns_first(client: TestClient, admin_token: str) -> None:
-    headers = {"Authorization": f"Bearer {admin_token}"}
+    headers = {"X-Firebase-Id-Token": f"Bearer {admin_token}"}
     media = _upload_and_confirm(client, headers, public=True)
 
     demo_resp = client.post(
@@ -166,12 +166,12 @@ def test_delete_referenced_asset_warns_first(client: TestClient, admin_token: st
 def test_delete_requires_admin_role_not_editor(
     client: TestClient, admin_token: str, editor_token: str
 ) -> None:
-    admin_headers = {"Authorization": f"Bearer {admin_token}"}
+    admin_headers = {"X-Firebase-Id-Token": f"Bearer {admin_token}"}
     media = _upload_and_confirm(client, admin_headers, public=True)
 
     resp = client.delete(
         f"/api/admin/media/{media['id']}",
-        headers={"Authorization": f"Bearer {editor_token}"},
+        headers={"X-Firebase-Id-Token": f"Bearer {editor_token}"},
     )
     assert resp.status_code == 403
 
@@ -179,13 +179,13 @@ def test_delete_requires_admin_role_not_editor(
 def test_delete_404_for_unknown_id(client: TestClient, admin_token: str) -> None:
     resp = client.delete(
         "/api/admin/media/does-not-exist",
-        headers={"Authorization": f"Bearer {admin_token}"},
+        headers={"X-Firebase-Id-Token": f"Bearer {admin_token}"},
     )
     assert resp.status_code == 404
 
 
 def test_editor_can_upload(client: TestClient, editor_token: str) -> None:
-    headers = {"Authorization": f"Bearer {editor_token}"}
+    headers = {"X-Firebase-Id-Token": f"Bearer {editor_token}"}
     media = _upload_and_confirm(client, headers, public=True)
     assert media["filename"] == "poster.png"
 
