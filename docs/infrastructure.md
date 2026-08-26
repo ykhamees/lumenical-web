@@ -6,8 +6,13 @@ earlier drafts of this doc assumed). This document now describes what
 actually exists, not a checklist — kept for anyone who needs to reproduce
 or extend it.
 
-Project: `lumenical-ai` (same project the site's Firebase Hosting already
-lives in).
+Project: `lumenical-web` (same project the site's Firebase Hosting already
+lives in). **Migrated 2026-08-26** from the original `lumenical-ai` project —
+every resource below (Artifact Registry repo, service accounts, Cloud Run
+service, WIF binding) was recreated under `lumenical-web` with identical
+names; the `lumenical-ai` copies have been decommissioned. `lumenical-ai`
+also hosts an unrelated product (`ykhamees/lumenical-ai-platform`) sharing
+that GCP project, which is why this move happened rather than reusing it.
 
 ## 1. Artifact Registry
 
@@ -15,12 +20,12 @@ lives in).
 gcloud artifacts repositories create lumenical-api \
   --repository-format=docker \
   --location=me-central1 \
-  --project=lumenical-ai
+  --project=lumenical-web
 ```
 
 ## 2. Runtime service account
 
-`lumenical-api@lumenical-ai.iam.gserviceaccount.com` — created before this
+`lumenical-api@lumenical-web.iam.gserviceaccount.com` — created before this
 document's first draft (predates this pass), already carrying:
 
 ```
@@ -42,14 +47,14 @@ vars unset, which its own code already treats as "skip this integration"
 (`api/app/config.py`). When those accounts exist:
 
 ```
-gcloud secrets create turnstile-secret-key --project=lumenical-ai
-gcloud secrets create resend-api-key --project=lumenical-ai
+gcloud secrets create turnstile-secret-key --project=lumenical-web
+gcloud secrets create resend-api-key --project=lumenical-web
 
 gcloud secrets add-iam-policy-binding turnstile-secret-key \
-  --member="serviceAccount:lumenical-api@lumenical-ai.iam.gserviceaccount.com" \
+  --member="serviceAccount:lumenical-api@lumenical-web.iam.gserviceaccount.com" \
   --role="roles/secretmanager.secretAccessor"
 gcloud secrets add-iam-policy-binding resend-api-key \
-  --member="serviceAccount:lumenical-api@lumenical-ai.iam.gserviceaccount.com" \
+  --member="serviceAccount:lumenical-api@lumenical-web.iam.gserviceaccount.com" \
   --role="roles/secretmanager.secretAccessor"
 ```
 
@@ -59,15 +64,15 @@ then redeploy with `--update-secrets=TURNSTILE_SECRET_KEY=turnstile-secret-key:l
 
 ```
 gcloud run deploy lumenical-api \
-  --image=me-central1-docker.pkg.dev/lumenical-ai/lumenical-api/api:<tag> \
+  --image=me-central1-docker.pkg.dev/lumenical-web/lumenical-api/api:<tag> \
   --region=me-central1 \
   --platform=managed \
-  --service-account=lumenical-api@lumenical-ai.iam.gserviceaccount.com \
+  --service-account=lumenical-api@lumenical-web.iam.gserviceaccount.com \
   --min-instances=0 \
   --concurrency=80 \
   --memory=512Mi \
   --no-allow-unauthenticated \
-  --project=lumenical-ai
+  --project=lumenical-web
 ```
 
 Deployed today with no `--set-secrets` (see §3). `--no-allow-unauthenticated`
@@ -91,30 +96,30 @@ region changes here, update that file to match.
 ## 5. Workload Identity Federation for the API's own deploy workflow
 
 `.github/workflows/deploy-api.yml` authenticates as
-`lumenical-api-deployer@lumenical-ai.iam.gserviceaccount.com` — a
+`lumenical-api-deployer@lumenical-web.iam.gserviceaccount.com` — a
 **separate** service account from the hosting deploy's `github-deployer`,
 scoped to Artifact Registry push + Cloud Run deploy only, nothing else.
 
 ```
 gcloud iam service-accounts create lumenical-api-deployer \
   --display-name="Lumenical API GitHub deploy" \
-  --project=lumenical-ai
+  --project=lumenical-web
 
-gcloud projects add-iam-policy-binding lumenical-ai \
-  --member="serviceAccount:lumenical-api-deployer@lumenical-ai.iam.gserviceaccount.com" \
+gcloud projects add-iam-policy-binding lumenical-web \
+  --member="serviceAccount:lumenical-api-deployer@lumenical-web.iam.gserviceaccount.com" \
   --role="roles/artifactregistry.writer"
-gcloud projects add-iam-policy-binding lumenical-ai \
-  --member="serviceAccount:lumenical-api-deployer@lumenical-ai.iam.gserviceaccount.com" \
+gcloud projects add-iam-policy-binding lumenical-web \
+  --member="serviceAccount:lumenical-api-deployer@lumenical-web.iam.gserviceaccount.com" \
   --role="roles/run.developer"
 gcloud iam service-accounts add-iam-policy-binding \
-  lumenical-api@lumenical-ai.iam.gserviceaccount.com \
-  --member="serviceAccount:lumenical-api-deployer@lumenical-ai.iam.gserviceaccount.com" \
+  lumenical-api@lumenical-web.iam.gserviceaccount.com \
+  --member="serviceAccount:lumenical-api-deployer@lumenical-web.iam.gserviceaccount.com" \
   --role="roles/iam.serviceAccountUser"
 
 gcloud iam service-accounts add-iam-policy-binding \
-  lumenical-api-deployer@lumenical-ai.iam.gserviceaccount.com \
+  lumenical-api-deployer@lumenical-web.iam.gserviceaccount.com \
   --role="roles/iam.workloadIdentityUser" \
-  --member="principalSet://iam.googleapis.com/projects/577809123018/locations/global/workloadIdentityPools/github-actions/attribute.repository/ykhamees/lumenical-web"
+  --member="principalSet://iam.googleapis.com/projects/653525125040/locations/global/workloadIdentityPools/github-actions/attribute.repository/ykhamees/lumenical-web"
 ```
 
 ## 6. Non-obvious operational notes

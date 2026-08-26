@@ -21,7 +21,7 @@ Verified by crawl, not assumption:
 |---|---|
 | Routes | `/`, `/services/`, `/about/`, `/contact/` + `not-found` |
 | Stack | Next 16.3.1 App Router, `output: "export"`, `trailingSlash: true`, Tailwind 3.4.19, React 19.1 |
-| Deploy | push to `main` → GitHub Actions → `out/` → Firebase Hosting, project `lumenical-ai`, via Workload Identity Federation |
+| Deploy | push to `main` → GitHub Actions → `out/` → Firebase Hosting, project `lumenical-ai`, via Workload Identity Federation — **migrated 2026-08-26 to project `lumenical-web`**; see `docs/infrastructure.md` |
 | Forms | **Both send nothing.** `ContactForm` and `NewsletterForm` simulate success when their `NEXT_PUBLIC_*` env var is unset — which it is |
 | Backend | None. `firestore.rules`, `firestore.indexes.json`, `storage.rules` describe ten collections that do not exist |
 | Health | `tsc --noEmit` clean, `eslint` clean, build succeeds |

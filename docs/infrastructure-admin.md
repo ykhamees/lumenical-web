@@ -2,11 +2,16 @@
 
 **Status: live**, provisioned 2026-08-22. This document now describes what
 actually exists, not a checklist — kept for anyone who needs to reproduce or
-extend it. Project: `lumenical-ai` (same project as the site's Firebase
+extend it. Project: `lumenical-web` (same project as the site's Firebase
 Hosting and the `api/` Cloud Run service), region `me-central1` throughout
 (matching where this project's Firestore database already lives — not
 `us-central1`, which earlier drafts of this doc assumed before that was
 checked against reality).
+
+**Migrated 2026-08-26** from the original `lumenical-ai` project — every
+resource below was recreated under `lumenical-web` with identical names;
+the `lumenical-ai` copies have been decommissioned (their Firestore data
+was verified present under `lumenical-web` first).
 
 **Not a subdomain.** `admin/` is served at `lumenical.com/website/**` via a
 `firebase.json` Hosting rewrite to the `lumenical-admin` Cloud Run service —
@@ -26,7 +31,7 @@ constant is for.
 gcloud artifacts repositories create lumenical-admin \
   --repository-format=docker \
   --location=me-central1 \
-  --project=lumenical-ai
+  --project=lumenical-web
 ```
 
 ## 2. Runtime service account
@@ -38,7 +43,7 @@ a plain `<product>` naming convention rather than `<product>-runtime`).
 ```
 gcloud iam service-accounts create lumenical-admin \
   --display-name="Lumenical admin console runtime" \
-  --project=lumenical-ai
+  --project=lumenical-web
 ```
 
 Two grants, both narrower than the API's own runtime service account — this
@@ -51,17 +56,17 @@ app never touches Firestore directly, only through the proxied Python API:
   ```
   gcloud run services add-iam-policy-binding lumenical-api \
     --region=me-central1 \
-    --member="serviceAccount:lumenical-admin@lumenical-ai.iam.gserviceaccount.com" \
+    --member="serviceAccount:lumenical-admin@lumenical-web.iam.gserviceaccount.com" \
     --role="roles/run.invoker" \
-    --project=lumenical-ai
+    --project=lumenical-web
   ```
 
 - **`roles/firebaseauth.admin`** — needed for `firebase-admin`'s
   `createSessionCookie` / `verifySessionCookie` calls in `src/lib/session.ts`:
 
   ```
-  gcloud projects add-iam-policy-binding lumenical-ai \
-    --member="serviceAccount:lumenical-admin@lumenical-ai.iam.gserviceaccount.com" \
+  gcloud projects add-iam-policy-binding lumenical-web \
+    --member="serviceAccount:lumenical-admin@lumenical-web.iam.gserviceaccount.com" \
     --role="roles/firebaseauth.admin"
   ```
 
@@ -69,16 +74,16 @@ app never touches Firestore directly, only through the proxied Python API:
 
 ```
 gcloud run deploy lumenical-admin \
-  --image=me-central1-docker.pkg.dev/lumenical-ai/lumenical-admin/admin:<tag> \
+  --image=me-central1-docker.pkg.dev/lumenical-web/lumenical-admin/admin:<tag> \
   --region=me-central1 \
   --platform=managed \
-  --service-account=lumenical-admin@lumenical-ai.iam.gserviceaccount.com \
+  --service-account=lumenical-admin@lumenical-web.iam.gserviceaccount.com \
   --min-instances=0 \
   --concurrency=80 \
   --memory=512Mi \
   --allow-unauthenticated \
   --set-env-vars=ADMIN_API_BASE_URL=<lumenical-api's Cloud Run URL> \
-  --project=lumenical-ai
+  --project=lumenical-web
 ```
 
 `--allow-unauthenticated` is deliberate, not a downgrade from the API's own
@@ -118,7 +123,7 @@ empirically). No domain mapping, no DNS record, no separate TLS cert.
 ## 4. Workload Identity Federation for the admin app's own deploy workflow
 
 `.github/workflows/deploy-admin.yml` authenticates as
-`lumenical-admin-deployer@lumenical-ai.iam.gserviceaccount.com` — a
+`lumenical-admin-deployer@lumenical-web.iam.gserviceaccount.com` — a
 **separate** service account from both `github-deployer` (hosting) and
 `lumenical-api-deployer` (the API), scoped to this repo's Artifact Registry
 push + this one Cloud Run service's deploy, nothing else. Mirrors the
@@ -127,23 +132,23 @@ existing hosting/API workflows' WIF pool rather than creating a second one.
 ```
 gcloud iam service-accounts create lumenical-admin-deployer \
   --display-name="Lumenical admin console GitHub deploy" \
-  --project=lumenical-ai
+  --project=lumenical-web
 
-gcloud projects add-iam-policy-binding lumenical-ai \
-  --member="serviceAccount:lumenical-admin-deployer@lumenical-ai.iam.gserviceaccount.com" \
+gcloud projects add-iam-policy-binding lumenical-web \
+  --member="serviceAccount:lumenical-admin-deployer@lumenical-web.iam.gserviceaccount.com" \
   --role="roles/artifactregistry.writer"
-gcloud projects add-iam-policy-binding lumenical-ai \
-  --member="serviceAccount:lumenical-admin-deployer@lumenical-ai.iam.gserviceaccount.com" \
+gcloud projects add-iam-policy-binding lumenical-web \
+  --member="serviceAccount:lumenical-admin-deployer@lumenical-web.iam.gserviceaccount.com" \
   --role="roles/run.developer"
 gcloud iam service-accounts add-iam-policy-binding \
-  lumenical-admin@lumenical-ai.iam.gserviceaccount.com \
-  --member="serviceAccount:lumenical-admin-deployer@lumenical-ai.iam.gserviceaccount.com" \
+  lumenical-admin@lumenical-web.iam.gserviceaccount.com \
+  --member="serviceAccount:lumenical-admin-deployer@lumenical-web.iam.gserviceaccount.com" \
   --role="roles/iam.serviceAccountUser"
 
 gcloud iam service-accounts add-iam-policy-binding \
-  lumenical-admin-deployer@lumenical-ai.iam.gserviceaccount.com \
+  lumenical-admin-deployer@lumenical-web.iam.gserviceaccount.com \
   --role="roles/iam.workloadIdentityUser" \
-  --member="principalSet://iam.googleapis.com/projects/577809123018/locations/global/workloadIdentityPools/github-actions/attribute.repository/ykhamees/lumenical-web"
+  --member="principalSet://iam.googleapis.com/projects/653525125040/locations/global/workloadIdentityPools/github-actions/attribute.repository/ykhamees/lumenical-web"
 ```
 
 `deploy-admin.yml`'s own deploy step also fetches `lumenical-api`'s current

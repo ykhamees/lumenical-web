@@ -1,6 +1,6 @@
 # Lumenical website
 
-Marketing site for Lumenical, built with Next.js (App Router, static export) and Tailwind CSS. Deploys as plain static HTML to Firebase Hosting at [lumenical.com](https://lumenical.com) (project `lumenical-ai`).
+Marketing site for Lumenical, built with Next.js (App Router, static export) and Tailwind CSS. Deploys as plain static HTML to Firebase Hosting at [lumenical.com](https://lumenical.com) (project `lumenical-web`).
 
 ## Structure
 
@@ -63,7 +63,7 @@ Cookieless via [Plausible](https://plausible.io) — no consent banner needed. A
 
 ## Deployment
 
-Pushing to `main` triggers `.github/workflows/deploy.yml`, which builds the site and deploys `out/` to **Firebase Hosting** (project `lumenical-ai`) using [Workload Identity Federation](https://cloud.google.com/iam/docs/workload-identity-federation) — no downloaded service-account key involved. The workflow authenticates as the `github-deployer` service account, scoped to that GitHub repo only via the `github-actions` WIF pool/provider in the `lumenical-ai` GCP project.
+Pushing to `main` triggers `.github/workflows/deploy.yml`, which builds the site and deploys `out/` to **Firebase Hosting** (project `lumenical-web`) using [Workload Identity Federation](https://cloud.google.com/iam/docs/workload-identity-federation) — no downloaded service-account key involved. The workflow authenticates as the `github-deployer` service account, scoped to that GitHub repo only via the `github-actions` WIF pool/provider in the `lumenical-web` GCP project.
 
 If you want Plausible or Turnstile wired up, add the `PLAUSIBLE_DOMAIN` / `TURNSTILE_SITE_KEY` repository variables under **Settings → Secrets and variables → Actions → Variables**. Both are deliberately only set in `deploy.yml`, not `preview.yml` — preview-channel traffic shouldn't pollute production analytics or require a real Turnstile challenge to test a PR.
 
