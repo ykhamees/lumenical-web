@@ -1,12 +1,14 @@
 "use client";
 
 import {
+  GoogleAuthProvider,
   onIdTokenChanged,
-  signInWithEmailAndPassword,
+  signInWithPopup,
   signOut as firebaseSignOut,
   type User,
 } from "firebase/auth";
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { ALLOWED_ADMIN_EMAIL_DOMAIN } from "./auth-domain";
 import { BASE_PATH } from "./base-path";
 import { auth } from "./firebase-client";
 
@@ -17,16 +19,23 @@ type AdminAuthContextValue = {
   status: Status;
   user: User | null;
   role: Role;
-  signIn: (email: string, password: string) => Promise<void>;
+  error: string | null;
+  signIn: () => Promise<void>;
   signOut: () => Promise<void>;
 };
 
 const AdminAuthContext = createContext<AdminAuthContextValue | null>(null);
 
+function isAllowedAccount(user: User): boolean {
+  const domain = user.email?.split("@")[1]?.toLowerCase();
+  return user.emailVerified && domain === ALLOWED_ADMIN_EMAIL_DOMAIN;
+}
+
 export function AdminAuthProvider({ children }: { children: ReactNode }) {
   const [status, setStatus] = useState<Status>("loading");
   const [user, setUser] = useState<User | null>(null);
   const [role, setRole] = useState<Role>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     // onIdTokenChanged (not onAuthStateChanged) also fires on the SDK's
@@ -42,11 +51,28 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
         setStatus("signed-out");
         return;
       }
+
+      // The Firebase client SDK will already have created/linked this
+      // account before we get here — this check is UX only, so a
+      // wrong-domain sign-in never gets stuck in a confusing "signed in"
+      // state. The real enforcement is server-side: session.ts rejects the
+      // cookie mint, and api/app/auth.py rejects every data request,
+      // independent of whatever the client claims.
+      if (!isAllowedAccount(nextUser)) {
+        await firebaseSignOut(auth);
+        setUser(null);
+        setRole(null);
+        setStatus("signed-out");
+        setError("Sign-in is restricted to lumenical.com Google accounts.");
+        return;
+      }
+
       const result = await nextUser.getIdTokenResult();
       const nextRole = result.claims.role;
       setUser(nextUser);
       setRole(nextRole === "admin" || nextRole === "editor" ? nextRole : null);
       setStatus("signed-in");
+      setError(null);
 
       await fetch(`${BASE_PATH}/api/session`, {
         method: "POST",
@@ -60,8 +86,13 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
-  async function signIn(email: string, password: string) {
-    await signInWithEmailAndPassword(auth, email, password);
+  async function signIn() {
+    setError(null);
+    const provider = new GoogleAuthProvider();
+    // UI hint only (narrows Google's account chooser) — NOT the real
+    // restriction; see isAllowedAccount() / session.ts / api/app/auth.py.
+    provider.setCustomParameters({ hd: ALLOWED_ADMIN_EMAIL_DOMAIN });
+    await signInWithPopup(auth, provider);
   }
 
   async function signOut() {
@@ -70,7 +101,7 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AdminAuthContext.Provider value={{ status, user, role, signIn, signOut }}>
+    <AdminAuthContext.Provider value={{ status, user, role, error, signIn, signOut }}>
       {children}
     </AdminAuthContext.Provider>
   );
