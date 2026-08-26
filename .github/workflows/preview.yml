@@ -52,14 +52,14 @@ jobs:
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
         with:
-          workload_identity_provider: projects/577809123018/locations/global/workloadIdentityPools/github-actions/providers/github
-          service_account: github-deployer@lumenical-ai.iam.gserviceaccount.com
+          workload_identity_provider: projects/653525125040/locations/global/workloadIdentityPools/github-actions/providers/github
+          service_account: github-deployer@lumenical-web.iam.gserviceaccount.com
 
       - name: Deploy preview channel
         id: deploy
         run: |
           npx firebase-tools hosting:channel:deploy "pr-${{ github.event.pull_request.number }}" \
-            --project=lumenical-ai --expires 7d | tee preview-deploy.log
+            --project=lumenical-web --expires 7d | tee preview-deploy.log
           url=$(grep -oE 'https://[a-zA-Z0-9.-]+\.web\.app[^[:space:]]*' preview-deploy.log | head -n1)
           echo "url=$url" >> "$GITHUB_OUTPUT"
           echo "### Preview deploy" >> "$GITHUB_STEP_SUMMARY"

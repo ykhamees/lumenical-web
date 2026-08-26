@@ -28,3 +28,12 @@ def test_whoami_accepts_an_admin_token(client: TestClient, admin_token: str) -> 
     body = resp.json()
     assert body["role"] == "admin"
     assert body["email"] is not None
+
+
+def test_whoami_rejects_wrong_domain_even_with_admin_role(
+    client: TestClient, wrong_domain_admin_token: str
+) -> None:
+    resp = client.get(
+        "/api/admin/whoami", headers={"X-Firebase-Id-Token": f"Bearer {wrong_domain_admin_token}"}
+    )
+    assert resp.status_code == 403

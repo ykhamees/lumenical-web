@@ -163,15 +163,37 @@ def admin_token() -> str:
     from app.firebase_app import get_app
 
     get_app()
-    email = f"admin-{uuid.uuid4().hex[:8]}@example.com"
+    email = f"admin-{uuid.uuid4().hex[:8]}@lumenical.com"
     password = "test-password-123"
     create_user_and_get_token(email, password)
 
     uid = firebase_auth.get_user_by_email(email).uid
+    firebase_auth.update_user(uid, email_verified=True)
     firebase_auth.set_custom_user_claims(uid, {"role": "admin"})
 
-    # Custom claims only appear in a *freshly minted* ID token, not the one
-    # from signUp (issued before the claim was set) — sign in again.
+    # Custom claims (and emailVerified) only appear in a *freshly minted* ID
+    # token, not the one from signUp (issued before either was set) — sign
+    # in again.
+    return sign_in_and_get_token(email, password)
+
+
+@pytest.fixture
+def wrong_domain_admin_token() -> str:
+    """Has role=admin but a non-lumenical.com email — proves the domain
+    check is independent of, and enforced before, the role check."""
+    from firebase_admin import auth as firebase_auth
+
+    from app.firebase_app import get_app
+
+    get_app()
+    email = f"outsider-{uuid.uuid4().hex[:8]}@example.com"
+    password = "test-password-123"
+    create_user_and_get_token(email, password)
+
+    uid = firebase_auth.get_user_by_email(email).uid
+    firebase_auth.update_user(uid, email_verified=True)
+    firebase_auth.set_custom_user_claims(uid, {"role": "admin"})
+
     return sign_in_and_get_token(email, password)
 
 
@@ -188,11 +210,12 @@ def editor_token() -> str:
     from app.firebase_app import get_app
 
     get_app()
-    email = f"editor-{uuid.uuid4().hex[:8]}@example.com"
+    email = f"editor-{uuid.uuid4().hex[:8]}@lumenical.com"
     password = "test-password-123"
     create_user_and_get_token(email, password)
 
     uid = firebase_auth.get_user_by_email(email).uid
+    firebase_auth.update_user(uid, email_verified=True)
     firebase_auth.set_custom_user_claims(uid, {"role": "editor"})
 
     return sign_in_and_get_token(email, password)

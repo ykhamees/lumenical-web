@@ -6,6 +6,7 @@ from firebase_admin import auth as firebase_auth
 from .firebase_app import get_app
 
 ROLES = ("admin", "editor")
+ALLOWED_EMAIL_DOMAIN = "lumenical.com"
 
 
 @dataclass
@@ -30,9 +31,11 @@ async def require_admin_user(
     x_firebase_id_token: str | None = Header(default=None),
 ) -> AdminUser:
     """Verifies the Firebase ID token on every request — the client's own
-    claim of a role is never trusted, only what's actually on the verified
-    token. Requires `role` in {"admin", "editor"}, matching
-    firestore.rules' `isEditorOrAdmin()` helper exactly.
+    claim of a role (or a domain) is never trusted, only what's actually on
+    the verified token. Requires a verified @lumenical.com email AND `role`
+    in {"admin", "editor"} — both, not either; matching firestore.rules'
+    `isEditorOrAdmin()` helper for the role half, and bootstrap_admin.py's
+    domain validation on the provisioning side.
     """
     get_app()
     token = _extract_bearer_token(x_firebase_id_token)
@@ -42,11 +45,16 @@ async def require_admin_user(
     except Exception as exc:  # noqa: BLE001 — any verification failure is just "unauthorized"
         raise HTTPException(status_code=401, detail="Invalid or expired token") from exc
 
+    email = decoded.get("email")
+    domain = email.split("@")[1].lower() if email and "@" in email else None
+    if not decoded.get("email_verified") or domain != ALLOWED_EMAIL_DOMAIN:
+        raise HTTPException(status_code=403, detail="Account not authorized")
+
     role = decoded.get("role")
     if role not in ROLES:
         raise HTTPException(status_code=403, detail="Insufficient role")
 
-    return AdminUser(uid=decoded["uid"], email=decoded.get("email"), role=role)
+    return AdminUser(uid=decoded["uid"], email=email, role=role)
 
 
 async def require_admin_only(
