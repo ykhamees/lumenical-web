@@ -69,11 +69,16 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
 
       const result = await nextUser.getIdTokenResult();
       const nextRole = result.claims.role;
-      setUser(nextUser);
-      setRole(nextRole === "admin" || nextRole === "editor" ? nextRole : null);
-      setStatus("signed-in");
-      setError(null);
 
+      // Mint the server-side session cookie *before* flipping to
+      // "signed-in" — AdminShell only renders the nav (and its <Link>s)
+      // once status is "signed-in", and Next.js prefetches every visible
+      // link immediately on mount. Flipping status first was letting that
+      // prefetch race ahead of this POST: prefetches that hit proxy.ts
+      // before the cookie existed got 307-redirected, and Next.js's
+      // client-side Router Cache then kept serving that stale redirect for
+      // real clicks on those links even after the cookie landed moments
+      // later — no error, just a link that silently goes nowhere.
       await fetch(`${BASE_PATH}/api/session`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -83,6 +88,11 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
         // Python API re-verifies a fresh ID token on every data request
         // regardless, so a failed cookie mint here isn't a security gap.
       });
+
+      setUser(nextUser);
+      setRole(nextRole === "admin" || nextRole === "editor" ? nextRole : null);
+      setStatus("signed-in");
+      setError(null);
     });
   }, []);
 
