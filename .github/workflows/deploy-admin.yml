@@ -51,15 +51,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # Requires the WIF binding + lumenical-admin-deployer service account
-      # documented in docs/infrastructure-admin.md — neither exists yet, so
-      # this job will fail authentication until that's provisioned. The
-      # build job above needs no GCP access and works today.
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
         with:
-          workload_identity_provider: projects/577809123018/locations/global/workloadIdentityPools/github-actions/providers/github
-          service_account: lumenical-admin-deployer@lumenical-ai.iam.gserviceaccount.com
+          workload_identity_provider: projects/653525125040/locations/global/workloadIdentityPools/github-actions/providers/github
+          service_account: lumenical-admin-deployer@lumenical-web.iam.gserviceaccount.com
 
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
@@ -81,20 +77,20 @@ jobs:
             --build-arg NEXT_PUBLIC_FIREBASE_API_KEY \
             --build-arg NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN \
             --build-arg NEXT_PUBLIC_FIREBASE_PROJECT_ID \
-            -t me-central1-docker.pkg.dev/lumenical-ai/lumenical-admin/admin:${{ github.sha }} .
-          docker push me-central1-docker.pkg.dev/lumenical-ai/lumenical-admin/admin:${{ github.sha }}
+            -t me-central1-docker.pkg.dev/lumenical-web/lumenical-admin/admin:${{ github.sha }} .
+          docker push me-central1-docker.pkg.dev/lumenical-web/lumenical-admin/admin:${{ github.sha }}
 
       - name: Get API service URL
         id: api-url
         run: |
-          url=$(gcloud run services describe lumenical-api --region=me-central1 --project=lumenical-ai --format='value(status.url)')
+          url=$(gcloud run services describe lumenical-api --region=me-central1 --project=lumenical-web --format='value(status.url)')
           echo "url=$url" >> "$GITHUB_OUTPUT"
 
       - name: Deploy to Cloud Run
         run: |
           gcloud run deploy lumenical-admin \
-            --image=me-central1-docker.pkg.dev/lumenical-ai/lumenical-admin/admin:${{ github.sha }} \
+            --image=me-central1-docker.pkg.dev/lumenical-web/lumenical-admin/admin:${{ github.sha }} \
             --region=me-central1 \
-            --project=lumenical-ai \
+            --project=lumenical-web \
             --set-env-vars=ADMIN_API_BASE_URL=${{ steps.api-url.outputs.url }} \
             --quiet

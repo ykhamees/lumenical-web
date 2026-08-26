@@ -77,15 +77,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # Requires the WIF binding + lumenical-api-deployer service account
-      # documented in docs/infrastructure.md — neither exists yet, so this
-      # job will fail authentication until that's provisioned. The test
-      # job above runs regardless and needs no GCP access at all.
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
         with:
-          workload_identity_provider: projects/577809123018/locations/global/workloadIdentityPools/github-actions/providers/github
-          service_account: lumenical-api-deployer@lumenical-ai.iam.gserviceaccount.com
+          workload_identity_provider: projects/653525125040/locations/global/workloadIdentityPools/github-actions/providers/github
+          service_account: lumenical-api-deployer@lumenical-web.iam.gserviceaccount.com
 
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
@@ -96,13 +92,13 @@ jobs:
       - name: Build and push image
         working-directory: api
         run: |
-          docker build -t me-central1-docker.pkg.dev/lumenical-ai/lumenical-api/api:${{ github.sha }} .
-          docker push me-central1-docker.pkg.dev/lumenical-ai/lumenical-api/api:${{ github.sha }}
+          docker build -t me-central1-docker.pkg.dev/lumenical-web/lumenical-api/api:${{ github.sha }} .
+          docker push me-central1-docker.pkg.dev/lumenical-web/lumenical-api/api:${{ github.sha }}
 
       - name: Deploy to Cloud Run
         run: |
           gcloud run deploy lumenical-api \
-            --image=me-central1-docker.pkg.dev/lumenical-ai/lumenical-api/api:${{ github.sha }} \
+            --image=me-central1-docker.pkg.dev/lumenical-web/lumenical-api/api:${{ github.sha }} \
             --region=me-central1 \
-            --project=lumenical-ai \
+            --project=lumenical-web \
             --quiet
